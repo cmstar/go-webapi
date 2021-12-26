@@ -10,9 +10,10 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// 空的 webapi.ApiHandler ，用于测试用例中不需要访问其方法只需要一个实例占位的场景。
+// NoOpHandler 是一个空的 webapi.ApiHandler ，用于测试用例中不需要访问其方法只需要一个实例占位的场景。
 var NoOpHandler webapi.ApiHandler = &webapi.ApiHandlerWrapper{}
 
+// NewStateSetup 用于设置用于测试 HTTP 请求。
 type NewStateSetup struct {
 	HttpMethod  string            // HTTP 请求的方法， GET/POST/PUT/DELETE 。若未给定值，默认为 GET 。
 	ContentType string            // 指定 HTTP Content-Type 头，若未给定值，则不会添加此字段。

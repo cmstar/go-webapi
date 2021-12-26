@@ -12,7 +12,7 @@ import (
 type slimApiLogger struct {
 }
 
-// NewSlimApiApiResponseWriter 返回用于 SlimAPI 协议的 webapi.ApiLogger 实现。
+// NewSlimApiApiLogger 返回用于 SlimAPI 协议的 webapi.ApiLogger 实现。
 // 该实现是无状态且线程安全的。
 func NewSlimApiApiLogger() webapi.ApiLogger {
 	return &slimApiLogger{}

@@ -24,6 +24,7 @@ type LogRecorder struct {
 
 var _ logx.Logger = (*LogRecorder)(nil)
 
+// Log 实现 Logger.Log() 。
 func (l *LogRecorder) Log(level logx.Level, message string, keyValues ...interface{}) error {
 	m := make(map[string]string)
 	l.m = append(l.m, m)
@@ -61,6 +62,7 @@ func (l *LogRecorder) Log(level logx.Level, message string, keyValues ...interfa
 	return nil
 }
 
+// Log 实现 Logger.LogFn() 。
 func (l *LogRecorder) LogFn(level logx.Level, messageFactory func() (string, []interface{})) error {
 	m, kv := messageFactory()
 	return l.Log(level, m, kv...)

@@ -16,7 +16,7 @@ const (
 	// ContentTypePlainText 对应 Content-Type: text/javascript 的值。
 	ContentTypePlainText = "text/plain"
 
-	// ContentTypePlainText 对应 Content-Type: application/x-www-form-urlencoded 的值。
+	// ContentTypeForm 对应 Content-Type: application/x-www-form-urlencoded 的值。
 	ContentTypeForm = "application/x-www-form-urlencoded"
 
 	// ContentTypeMultipartForm 对应 Content-Type: multipart/form-data 的值。
