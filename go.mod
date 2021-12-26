@@ -3,6 +3,7 @@ module github.com/cmstar/go-webapi
 go 1.17
 
 require (
+	github.com/cmstar/go-conv v0.1.2
 	github.com/cmstar/go-errx v1.1.0
 	github.com/cmstar/go-logx v1.0.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
