@@ -1,6 +1,8 @@
 package slimapi
 
 import (
+	"mime/multipart"
+	"sort"
 	"strconv"
 
 	"github.com/cmstar/go-webapi"
@@ -45,22 +47,20 @@ func (sl *slimApiLogger) Log(state *webapi.ApiState) {
 		fileNum := 0
 		req := state.Ctx.Request()
 		if req.MultipartForm != nil {
-			for _, fs := range req.MultipartForm.File {
-				for _, f := range fs {
-					fileNumStr := strconv.Itoa(fileNum)
-					keyValues = append(keyValues,
-						"File"+fileNumStr, f.Filename,
-						"Length"+fileNumStr, f.Size,
-					)
+			for _, f := range sl.sortedFileHeaders(req.MultipartForm) {
+				fileNumStr := strconv.Itoa(fileNum)
+				keyValues = append(keyValues,
+					"File"+fileNumStr, f.Filename,
+					"Length"+fileNumStr, f.Size,
+				)
 
-					if f.Header != nil {
-						if header, ok := f.Header[webapi.HttpHeaderContentType]; ok {
-							keyValues = append(keyValues, "ContentType"+fileNumStr, header[0])
-						}
+				if f.Header != nil {
+					if header, ok := f.Header[webapi.HttpHeaderContentType]; ok {
+						keyValues = append(keyValues, "ContentType"+fileNumStr, header[0])
 					}
-
-					fileNum++
 				}
+
+				fileNum++
 			}
 		}
 
@@ -72,4 +72,20 @@ func (sl *slimApiLogger) Log(state *webapi.ApiState) {
 		// Leave the output parameter @message an empty string.
 		return
 	})
+}
+
+// sortedFileHeaders 排序 MultipartForm ，解决 map 输出顺序不稳定的问题，以便获得稳定的日志。
+func (*slimApiLogger) sortedFileHeaders(form *multipart.Form) []*multipart.FileHeader {
+	keys := make([]string, 0, len(form.File))
+	for k := range form.File {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var mergedHeaders []*multipart.FileHeader
+	for i := 0; i < len(keys); i++ {
+		headers := form.File[keys[i]]
+		mergedHeaders = append(mergedHeaders, headers...)
+	}
+	return mergedHeaders
 }
