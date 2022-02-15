@@ -144,6 +144,12 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	})
 
 	p.testOne(testOneArgs{
+		methodName:      "WrongTypeParameters2",
+		runMethods:      RUN_GET,
+		panicMsgPattern: `the parameter must be one of .+`,
+	})
+
+	p.testOne(testOneArgs{
 		methodName: "CannotConvert",
 		runMethods: RUN_GET,
 		requestInput: map[string]interface{}{
@@ -194,6 +200,7 @@ func (slimApiDecoderTestProvider) WithAllReverse(simpleIn, *webapi.ApiState, *we
 func (slimApiDecoderTestProvider) TooManyParameters1(complexIn, complexIn)                   {}
 func (slimApiDecoderTestProvider) TooManyParameters2(*webapi.ApiState, complexIn, complexIn) {}
 func (slimApiDecoderTestProvider) WrongTypeParameters(chan string)                           {}
+func (slimApiDecoderTestProvider) WrongTypeParameters2(webapi.ApiState)                      {}
 func (slimApiDecoderTestProvider) CannotConvert(struct{ C chan int })                        {}
 
 /*

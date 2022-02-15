@@ -40,7 +40,7 @@ func (d *slimApiDecoder) Decode(state *webapi.ApiState) {
 		case in == reflect.TypeOf(state):
 			args[i] = reflect.ValueOf(state)
 
-		case in.Kind() == reflect.Struct:
+		case in.Kind() == reflect.Struct && in != reflect.TypeOf(*state):
 			// 自定义参数只能有一个。
 			if paramHit {
 				webapi.PanicApiError(state, nil, "there shouldn't be more than one parameter for the custom data")
