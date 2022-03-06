@@ -34,9 +34,14 @@ func (qs QueryString) Get(name string) (string, bool) {
 // name 会被转为小写。若 URL 解码失败，该参数被忽略。
 func (qs *QueryString) appendNamedParam(param string) {
 	parts := strings.Split(param, "=")
-	name := strings.ToLower(parts[0])
-	value, err := url.QueryUnescape(parts[1])
 
+	name, err := url.QueryUnescape(parts[0])
+	if err != nil {
+		return
+	}
+	name = strings.ToLower(name)
+
+	value, err := url.QueryUnescape(parts[1])
 	if err != nil {
 		return
 	}
@@ -67,6 +72,7 @@ func (qs *QueryString) appendNameless(value string) {
 }
 
 // ParseQueryString 模拟 .net Framework 的 HttpRequest.QueryString 的解析方式。
+// 给定的 queryString 可以以“?”开头，也可以不带。
 //
 // 在传统ASP.net中，“?a&b”解析为一个名称为 null，值为“a,b”的参数；而 Go 的框架则将其等同于 “?a=&b=” 处理，变成
 // 两个名称分别为 a 、 b 而值为空的参数。这与预定义的 API 协议如 SlimAPI 不符。

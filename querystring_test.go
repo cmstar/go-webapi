@@ -33,10 +33,10 @@ func TestParseQueryString(t *testing.T) {
 
 		{
 			"p2",
-			"a=1&a=%E4%B8%AD%E6%96%87",
+			"%3Aa=1&%3Aa=%E4%B8%AD%E6%96%87",
 			QueryString{
 				Nameless:    "",
-				Named:       map[string]string{"a": "1,中文"},
+				Named:       map[string]string{":a": "1,中文"},
 				HasNameless: false,
 			},
 		},
