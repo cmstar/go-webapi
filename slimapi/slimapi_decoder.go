@@ -86,7 +86,7 @@ func (d *slimApiDecoder) paramMap(state *webapi.ApiState) (map[string]interface{
 		return m, nil
 
 	case meta_RequestFormat_Post:
-		req := state.Ctx.Request()
+		req := state.RawRequest
 		contentType := req.Header.Get(webapi.HttpHeaderContentType)
 
 		// Content-Type 为 multipart/form-data 的，交给框架内置方法解析。
@@ -109,7 +109,7 @@ func (d *slimApiDecoder) paramMap(state *webapi.ApiState) (map[string]interface{
 
 func (d *slimApiDecoder) readQueryStringBody(state *webapi.ApiState, contentType string) map[string]interface{} {
 	// 将整个 body 作为 query-string 读取。不知道 body 实际上会上送什么样的数据，做一层防御，限制读取数据的最大大小。
-	reader := io.LimitReader(state.Ctx.Request().Body, maxMemorySizeParseRequestBody)
+	reader := io.LimitReader(state.RawRequest.Body, maxMemorySizeParseRequestBody)
 	buf := new(strings.Builder)
 	_, err := io.Copy(buf, reader)
 	if err != nil {
@@ -129,7 +129,7 @@ func (d *slimApiDecoder) readQueryStringBody(state *webapi.ApiState, contentType
 }
 
 func (d *slimApiDecoder) readMultiPartBody(state *webapi.ApiState) (map[string]interface{}, error) {
-	req := state.Ctx.Request()
+	req := state.RawRequest
 	err := req.ParseMultipartForm(maxMemorySizeParseRequestBody)
 	if err != nil {
 		err = errx.Wrap("slimApiDecoder: read multipart-form", err)
@@ -153,7 +153,7 @@ func (d *slimApiDecoder) readMultiPartBody(state *webapi.ApiState) (map[string]i
 }
 
 func (d *slimApiDecoder) readJsonBody(state *webapi.ApiState) (map[string]interface{}, error) {
-	body, err := io.ReadAll(state.Ctx.Request().Body)
+	body, err := io.ReadAll(state.RawRequest.Body)
 	if err != nil {
 		err = errx.Wrap("slimApiDecoder: read body", err)
 		return nil, err

@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"reflect"
 
 	"github.com/cmstar/go-errx"
 	"github.com/cmstar/go-logx"
-	"github.com/labstack/echo/v4"
 )
 
 /*
@@ -168,16 +168,15 @@ type ApiLogger interface {
 	Log(state *ApiState)
 }
 
-// CreateHandlerFunc 返回一个封装了给定的 ApiHandler 的 echo.HandlerFunc 。
-// 此函数定义了通过 ApiHandler 在 echo 框架中处理 HTTP 请求的完整过程。
+// CreateHandlerFunc 返回一个封装了给定的 ApiHandler 的 http.HandlerFunc 。
 //
 // logFinder 用于获取 Logger ，该 Logger 会赋值给 ApiState.Logger 。可为 nil 表示不记录日志。
 // 对于每个请求，其日志名称基于响应该请求的方法，由两部分构成，格式为“{ApiHandler.Name()}.{ApiMethod.Provider}.{ApiMethod.Name}”。
 // 如果未能检索到对应的方法，则日志名称为 ApiHandler.Name() 。
 //
-func CreateHandlerFunc(handler ApiHandler, logFinder logx.LogFinder) echo.HandlerFunc {
-	return func(ctx echo.Context) error {
-		state := NewState(ctx, handler)
+func CreateHandlerFunc(handler ApiHandler, logFinder logx.LogFinder) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		state := NewState(w, r, handler)
 
 		// 把比较可能 panic 的步骤抽出来，添加一个 defer 捕获错误并填到 state.Error 是上，使 panic 后仍
 		// 可以预定义的报文返回结果。
@@ -192,15 +191,13 @@ func CreateHandlerFunc(handler ApiHandler, logFinder logx.LogFinder) echo.Handle
 			handler.WriteResponse(state)
 		}
 
-		response := ctx.Response()
-		response.Header().Set(string(HttpHeaderContentType), string(state.ResponseContentType))
-		_, err := io.Copy(response.Writer, state.ResponseBody)
+		w.Header().Set(string(HttpHeaderContentType), string(state.ResponseContentType))
+		_, err := io.Copy(w, state.ResponseBody)
 		if err != nil {
 			PanicApiError(state, err, "write response body")
 		}
 
 		handler.Log(state)
-		return nil
 	}
 }
 

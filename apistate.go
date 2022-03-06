@@ -2,18 +2,21 @@ package webapi
 
 import (
 	"io"
+	"net/http"
 	"reflect"
 
 	"github.com/cmstar/go-logx"
-	"github.com/labstack/echo/v4"
 )
 
 // ApiState 用于记录一个请求的处理流程中的数据。每个请求使用一个新的 ApiState 。
 // 处理过程采用管道模式，每个步骤从 ApiState 获取所需数据，并将处理结果写回 ApiState 。
 // 当处理过程结束后，以 Response 开头的字段应被填充。
 type ApiState struct {
-	// Ctx 原始的请求。
-	Ctx echo.Context
+	// RawRequest 是原始的 HTTP 请求。对应 http.Handler 的参数。
+	RawRequest *http.Request
+
+	// RawResponse 用于写入 HTTP 回执。对应 http.Handler 的参数。
+	RawResponse http.ResponseWriter
 
 	// Query 是按 ASP.net 的方式解析 URL 上的参数。
 	// 由于通信协议是按 .net 版的方式制定的，获取 query-string 应通过此字段进行。
@@ -64,9 +67,13 @@ type ApiState struct {
 }
 
 // NewState 创建一个新的 ApiState ，每个请求应使用一个新的 ApiState 。
-func NewState(ctx echo.Context, handler ApiHandler) *ApiState {
-	s := &ApiState{Handler: handler, Ctx: ctx}
-	s.Query = ParseQueryString(ctx.QueryString())
+func NewState(r http.ResponseWriter, w *http.Request, handler ApiHandler) *ApiState {
+	s := &ApiState{
+		Handler:     handler,
+		RawRequest:  w,
+		RawResponse: r,
+	}
+	s.Query = ParseQueryString(w.URL.RawQuery)
 	s.customData = make(map[string]interface{})
 	return s
 }

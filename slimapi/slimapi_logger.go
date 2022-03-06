@@ -28,9 +28,10 @@ func (sl *slimApiLogger) Log(state *webapi.ApiState) {
 	logLevel, errTypeName, errDescription := webapi.DescribeError(state.Error)
 
 	l.LogFn(logLevel, func() (message string, keyValues []interface{}) {
+		req := state.RawRequest
 		keyValues = append(keyValues,
 			"Ip", state.UserHost,
-			"Url", state.Ctx.Request().RequestURI,
+			"Url", req.RequestURI,
 		)
 
 		// getBufferedBody 可以获取到所有类型的文本参数，不含文件上传。
@@ -43,9 +44,8 @@ func (sl *slimApiLogger) Log(state *webapi.ApiState) {
 		}
 
 		// 单独处理上传的文件，只输出文件名和体积。
-		// 文件可能有同名的， echo 框架把同名的并在一个 map 的 value 上了。
+		// 文件可能有同名的， 同名的并在一个 map 的 value 上了。
 		fileNum := 0
-		req := state.Ctx.Request()
 		if req.MultipartForm != nil {
 			for _, f := range sl.sortedFileHeaders(req.MultipartForm) {
 				fileNumStr := strconv.Itoa(fileNum)

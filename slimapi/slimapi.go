@@ -21,8 +21,7 @@ const (
 	meta_ResponseFormat_Plain = "plain"
 
 	// 解析请求的 body 部分时最大可用的内存，读取 multipart-form-data 型数据时，超过此字节数将使用临时文件存储。
-	// 另外，也是不通过 echo 框架而单独使用代码读取 body 时，允许的最大的字节数。
-	// 目前值为 10M ，它和 echo 框架读取 query-string 型表单的最大大小限制一致。
+	// 另外，也是单独使用代码读取 body 时，允许的最大的字节数。
 	maxMemorySizeParseRequestBody = 10 * 1024 * 1024
 
 	// 自定义字段。记录当前请求使用的格式（对应 meta_RequestFormat_* 常量）。格式优先从 URL 上解析，其次是 Content-Type 头。

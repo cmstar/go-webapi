@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/cmstar/go-webapi"
-	"github.com/labstack/echo/v4"
 )
 
 // slimApiNameResolver 实现 SlimAPI 的 webapi.ApiNameResolver 。
@@ -28,7 +27,7 @@ func (d *slimApiNameResolver) FillMethod(state *webapi.ApiState) {
 	// 形式1：http://domain/entry?~method=METHOD[&~format=FORMAT][&~callback=CALLBACK]
 	// 形式2：http://domain/entry?METHOD[.FORMAT][(CALLBACK)]
 	// 形式3使用路由：http://domain/entry/:~method/...[:~format]...[:~callback]
-	ctx := state.Ctx
+	req := state.RawRequest
 	query := state.Query
 
 	// 形式1
@@ -43,15 +42,15 @@ func (d *slimApiNameResolver) FillMethod(state *webapi.ApiState) {
 
 	// 形式3
 	if method == "" {
-		method = ctx.Param(meta_Param_Method)
+		method = webapi.GetRouteParam(req, meta_Param_Method)
 	}
 
 	if format == "" {
-		format = ctx.Param(meta_Param_Format)
+		format = webapi.GetRouteParam(req, meta_Param_Format)
 	}
 
 	if callback == "" {
-		callback = ctx.Param(meta_Param_Callback)
+		callback = webapi.GetRouteParam(req, meta_Param_Callback)
 	}
 
 	// format 需要校验，如果有错整个过程就直接终止了，故首先处理。
@@ -59,7 +58,7 @@ func (d *slimApiNameResolver) FillMethod(state *webapi.ApiState) {
 
 	// format 没有通过参数直接指定格式的情况下，尝试从 Content-Type 判断。
 	if format == "" {
-		contentType := ctx.Request().Header.Get(echo.HeaderContentType)
+		contentType := req.Header.Get(webapi.HttpHeaderContentType)
 		switch contentType {
 		case webapi.ContentTypeJson:
 			requestFormat = meta_RequestFormat_Json

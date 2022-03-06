@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"net/textproto"
 	"strings"
 	"testing"
@@ -12,7 +13,6 @@ import (
 	"github.com/cmstar/go-errx"
 	"github.com/cmstar/go-webapi"
 	"github.com/cmstar/go-webapi/webapitest"
-	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,7 +24,7 @@ func Test_slimApiLogger_Log(t *testing.T) {
 		userHost string
 		body     string
 		err      error
-		ctxSetup func(echo.Context)
+		setup    func(*http.Request)
 	}
 
 	tests := []struct {
@@ -105,7 +105,7 @@ func Test_slimApiLogger_Log(t *testing.T) {
 				userHost: "",
 				body:     "",
 				err:      nil,
-				ctxSetup: setupMultipartForm,
+				setup:    setupMultipartForm,
 			},
 			wantHeader: `level=INFO message= Ip= Url=/` +
 				` File0=file0 Length0=13 ContentType0=application/octet-stream` +
@@ -128,8 +128,8 @@ func Test_slimApiLogger_Log(t *testing.T) {
 				state.Error = tt.args.err
 			}
 
-			if tt.args.ctxSetup != nil {
-				tt.args.ctxSetup(state.Ctx)
+			if tt.args.setup != nil {
+				tt.args.setup(state.RawRequest)
 			}
 
 			logger.Log(state)
@@ -140,7 +140,7 @@ func Test_slimApiLogger_Log(t *testing.T) {
 	}
 }
 
-func setupMultipartForm(ctx echo.Context) {
+func setupMultipartForm(req *http.Request) {
 	var b bytes.Buffer
 	w := multipart.NewWriter(&b)
 	w.WriteField("k1", "v1")
@@ -164,7 +164,7 @@ func setupMultipartForm(ctx echo.Context) {
 	file1.Write(data1[:])
 
 	w.Close()
-	ctx.Request().Header.Set("Content-Type", w.FormDataContentType())
-	ctx.Request().Body = io.NopCloser(&b)
-	ctx.Request().ParseMultipartForm(256)
+	req.Header[webapi.HttpHeaderContentType] = []string{w.FormDataContentType()}
+	req.Body = io.NopCloser(&b)
+	req.ParseMultipartForm(256)
 }

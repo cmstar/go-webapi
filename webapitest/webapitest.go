@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/cmstar/go-webapi"
-	"github.com/labstack/echo/v4"
 )
 
 // NoOpHandler 是一个空的 webapi.ApiHandler ，用于测试用例中不需要访问其方法只需要一个实例占位的场景。
@@ -23,13 +22,13 @@ type NewStateSetup struct {
 }
 
 // NewStateForTest 基于 httptest 包创建用于测试 HTTP 请求的相关实例。
-func NewStateForTest(apiHandler webapi.ApiHandler, url string, setup NewStateSetup) (*webapi.ApiState, *httptest.ResponseRecorder) {
+func NewStateForTest(apiHandler webapi.ApiHandler, uri string, setup NewStateSetup) (*webapi.ApiState, *httptest.ResponseRecorder) {
 	httpMethod := setup.HttpMethod
 	if httpMethod == "" {
 		httpMethod = "GET"
 	}
 
-	req := httptest.NewRequest(httpMethod, url, nil)
+	req := httptest.NewRequest(httpMethod, uri, nil)
 
 	if setup.ContentType != "" {
 		req.Header.Add(webapi.HttpHeaderContentType, setup.ContentType)
@@ -46,23 +45,8 @@ func NewStateForTest(apiHandler webapi.ApiHandler, url string, setup NewStateSet
 		}
 	}
 
+	req = webapi.SetRouteParams(req, setup.RouteParams)
 	rec := httptest.NewRecorder()
-	e := echo.New()
-	ctx := e.NewContext(req, rec)
-
-	routeParamLen := len(setup.RouteParams)
-	if routeParamLen > 0 {
-		paramNames := make([]string, 0, routeParamLen)
-		paramValues := make([]string, 0, routeParamLen)
-		for k, v := range setup.RouteParams {
-			paramNames = append(paramNames, k)
-			paramValues = append(paramValues, v)
-		}
-
-		ctx.SetParamNames(paramNames...)
-		ctx.SetParamValues(paramValues...)
-	}
-
-	state := webapi.NewState(ctx, apiHandler)
+	state := webapi.NewState(rec, req, apiHandler)
 	return state, rec
 }

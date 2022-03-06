@@ -60,7 +60,7 @@ func DoIntergrationTest(t *testing.T, args intergrationTestArgs) {
 	logger := webapitest.NewLogRecorder()
 	logFinder := logx.NewSingleLoggerLogFinder(logger)
 	handlerFunc := webapi.CreateHandlerFunc(handlerForIntergrationTest, logFinder)
-	handlerFunc(state.Ctx)
+	handlerFunc(state.RawResponse, state.RawRequest)
 
 	a := assert.New(t)
 	a.Equal(args.wantStatusCode, rec.Code, "StatusCode")
