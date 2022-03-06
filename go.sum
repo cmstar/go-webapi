@@ -1,9 +1,9 @@
 github.com/cmstar/go-conv v0.1.2 h1:LkGwedUpOFsEPsLEky+A+b4AA+7wy0xeGBfik4Es02c=
 github.com/cmstar/go-conv v0.1.2/go.mod h1:vc836gwYz4cI2oCWdL/EF514eEjTDpXmTBvfZEELdXs=
-github.com/cmstar/go-errx v1.1.0 h1:bDUm88bMJDVO9COdZGSkow0R0yqoHJJVa3ZO0EF6oPA=
-github.com/cmstar/go-errx v1.1.0/go.mod h1:q9VjJpK9+y2r533Ud7hp+LsY2IjqkaC0XQ/ZTrG5vFI=
-github.com/cmstar/go-logx v1.0.0 h1:qBwGAe4iEmYlfRU/njmaQu6JvNkC/pYO1NlWIAxsAFQ=
-github.com/cmstar/go-logx v1.0.0/go.mod h1:MeXoAq/kJ6z9iGDQSWsd5EiBku6yNxOm35oXKimavy8=
+github.com/cmstar/go-errx v1.3.0 h1:OMC7tPyrAgldOkjIPcIEN4yQd0NPe27scROW3Vc9Qa4=
+github.com/cmstar/go-errx v1.3.0/go.mod h1:q9VjJpK9+y2r533Ud7hp+LsY2IjqkaC0XQ/ZTrG5vFI=
+github.com/cmstar/go-logx v1.2.0 h1:9QWcZ0uwm8h6SafsDLh4oVW+TYEgLsWt59v6HoFWnYo=
+github.com/cmstar/go-logx v1.2.0/go.mod h1:0A7mOSEe/HJ6yBqky2M17Bfto5uLF5gPFqtIrOH3bLc=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
