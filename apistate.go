@@ -34,6 +34,7 @@ type ApiState struct {
 	Name string
 
 	// Method 记录要调用的方法，和 Name 一一映射，可从通过 ApiMethodRegister.GetMethod(ApiState.Name) 得到。
+	// 方法由 ApiMethodCaller 调用，参数从 Args 获取。
 	Method ApiMethod
 
 	// MethodArgs 存放用于调用 Method 的参数。

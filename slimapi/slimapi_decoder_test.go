@@ -121,32 +121,31 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 		expected: []interface{}{
 			simpleIn{},
 			EXPECT_API_STATE,
-			EXPECT_API_STATE,
 		},
 	})
 
 	p.testOne(testOneArgs{
 		methodName:      "TooManyParameters1",
 		runMethods:      RUN_GET,
-		panicMsgPattern: `more than one parameter`,
+		panicMsgPattern: `argument type cannot be duplicated`,
 	})
 
 	p.testOne(testOneArgs{
 		methodName:      "TooManyParameters2",
 		runMethods:      RUN_GET,
-		panicMsgPattern: `more than one parameter`,
+		panicMsgPattern: `argument type cannot be duplicated`,
 	})
 
 	p.testOne(testOneArgs{
 		methodName:      "WrongTypeParameters",
 		runMethods:      RUN_GET,
-		panicMsgPattern: `the parameter must be one of .+`,
+		panicMsgPattern: `method '' arg0 chan string: not supported`,
 	})
 
 	p.testOne(testOneArgs{
 		methodName:      "WrongTypeParameters2",
 		runMethods:      RUN_GET,
-		panicMsgPattern: `the parameter must be one of .+`,
+		panicMsgPattern: `method '' arg0 webapi.ApiState: must be a pointer`,
 	})
 
 	p.testOne(testOneArgs{
@@ -191,10 +190,10 @@ type complexIn struct {
 	Boolean bool
 }
 
-func (slimApiDecoderTestProvider) Complex(complexIn)                                           {}
-func (slimApiDecoderTestProvider) WithApiState(*webapi.ApiState)                               {}
-func (slimApiDecoderTestProvider) WithAll(*webapi.ApiState, simpleIn)                          {}
-func (slimApiDecoderTestProvider) WithAllReverse(simpleIn, *webapi.ApiState, *webapi.ApiState) {}
+func (slimApiDecoderTestProvider) Complex(complexIn)                         {}
+func (slimApiDecoderTestProvider) WithApiState(*webapi.ApiState)             {}
+func (slimApiDecoderTestProvider) WithAll(*webapi.ApiState, simpleIn)        {}
+func (slimApiDecoderTestProvider) WithAllReverse(simpleIn, *webapi.ApiState) {}
 
 // These should panic.
 func (slimApiDecoderTestProvider) TooManyParameters1(complexIn, complexIn)                   {}

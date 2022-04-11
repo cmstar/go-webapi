@@ -11,66 +11,38 @@ import (
 	"github.com/cmstar/go-webapi"
 )
 
-// slimApiDecoder 实现 SlimAPI 的 webapi.ApiDecoder 。
-type slimApiDecoder struct {
-}
-
 // NewSlimApiDecoder 返回用于 SlimAPI 协议的 webapi.ApiDecoder 实现。
 func NewSlimApiDecoder() webapi.ApiDecoder {
-	return &slimApiDecoder{}
+	d := slimApiMethodStructArgDecoder{}
+	return webapi.NewUniqueTypeApiMethodDecoder(d.DecodeStruct)
 }
 
-// Decode 实现 webapi.ApiDecoder.Decode 。
-func (d *slimApiDecoder) Decode(state *webapi.ApiState) {
-	state.MustHaveMethod()
+// slimApiMethodStructArgDecoder 提供 DecodeStruct 方法，此方法是一个 webapi.ApiMethodArgDecodeFunc 。
+// 其定义了 SlimAPI 协议的参数解析过程。当前类型的默认值（zero value）即可保被使用。
+type slimApiMethodStructArgDecoder struct {
+}
 
-	typ := state.Method.Value.Type()
-	numIn := typ.NumIn()
-	args := make([]reflect.Value, numIn)
-
-	if numIn == 0 {
-		state.Args = args
-		return
+// DecodeStruct 是一个 webapi.ApiMethodArgDecodeFunc ，用于解析 SlimAPI 协议的参数。
+func (d slimApiMethodStructArgDecoder) DecodeStruct(state *webapi.ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
+	if argType.Kind() != reflect.Struct {
+		return false, nil, nil
 	}
 
-	paramHit := false
-	for i := 0; i < numIn; i++ {
-		in := typ.In(i)
-		switch {
-		case in == reflect.TypeOf(state):
-			args[i] = reflect.ValueOf(state)
-
-		case in.Kind() == reflect.Struct && in != reflect.TypeOf(*state):
-			// 自定义参数只能有一个。
-			if paramHit {
-				webapi.PanicApiError(state, nil, "there shouldn't be more than one parameter for the custom data")
-			}
-
-			paramMap, err := d.paramMap(state)
-			if err != nil {
-				state.Error = webapi.CreateBadRequestError(state, err, "bad request")
-				return
-			}
-
-			val, err := slimApiConv.ConvertType(paramMap, in)
-			if err != nil {
-				state.Error = webapi.CreateBadRequestError(state, err, "bad request")
-				return
-			}
-
-			args[i] = reflect.ValueOf(val)
-			paramHit = true
-
-		default:
-			webapi.PanicApiError(state, nil, "the parameter must be one of *webapi.ApiState or a struct, got %v", in)
-		}
+	paramMap, err := d.paramMap(state)
+	if err != nil {
+		return false, nil, webapi.CreateBadRequestError(state, err, "bad request")
 	}
 
-	state.Args = args
+	val, err := slimApiConv.ConvertType(paramMap, argType)
+	if err != nil {
+		return false, nil, webapi.CreateBadRequestError(state, err, "bad request")
+	}
+
+	return true, val, nil
 }
 
 // paramMap 将各类参数存入 map[string]interface{} 。
-func (d *slimApiDecoder) paramMap(state *webapi.ApiState) (map[string]interface{}, error) {
+func (d slimApiMethodStructArgDecoder) paramMap(state *webapi.ApiState) (map[string]interface{}, error) {
 	format := getRequestFormat(state)
 	if format == "" {
 		webapi.PanicApiError(state, nil, "missing request format")
@@ -107,7 +79,7 @@ func (d *slimApiDecoder) paramMap(state *webapi.ApiState) (map[string]interface{
 	return nil, nil // never run
 }
 
-func (d *slimApiDecoder) readQueryStringBody(state *webapi.ApiState, contentType string) map[string]interface{} {
+func (d slimApiMethodStructArgDecoder) readQueryStringBody(state *webapi.ApiState, contentType string) map[string]interface{} {
 	// 将整个 body 作为 query-string 读取。不知道 body 实际上会上送什么样的数据，做一层防御，限制读取数据的最大大小。
 	reader := io.LimitReader(state.RawRequest.Body, maxMemorySizeParseRequestBody)
 	buf := new(strings.Builder)
@@ -128,7 +100,7 @@ func (d *slimApiDecoder) readQueryStringBody(state *webapi.ApiState, contentType
 	return m
 }
 
-func (d *slimApiDecoder) readMultiPartBody(state *webapi.ApiState) (map[string]interface{}, error) {
+func (d slimApiMethodStructArgDecoder) readMultiPartBody(state *webapi.ApiState) (map[string]interface{}, error) {
 	req := state.RawRequest
 	err := req.ParseMultipartForm(maxMemorySizeParseRequestBody)
 	if err != nil {
@@ -152,7 +124,7 @@ func (d *slimApiDecoder) readMultiPartBody(state *webapi.ApiState) (map[string]i
 	return m, nil
 }
 
-func (d *slimApiDecoder) readJsonBody(state *webapi.ApiState) (map[string]interface{}, error) {
+func (d slimApiMethodStructArgDecoder) readJsonBody(state *webapi.ApiState) (map[string]interface{}, error) {
 	body, err := io.ReadAll(state.RawRequest.Body)
 	if err != nil {
 		err = errx.Wrap("slimApiDecoder: read body", err)
