@@ -13,17 +13,17 @@ import (
 
 // NewSlimApiDecoder 返回用于 SlimAPI 协议的 webapi.ApiDecoder 实现。
 func NewSlimApiDecoder() webapi.ApiDecoder {
-	d := slimApiMethodStructArgDecoder{}
+	d := SlimApiMethodStructArgDecoder{}
 	return webapi.NewUniqueTypeApiMethodDecoder(d.DecodeStruct)
 }
 
-// slimApiMethodStructArgDecoder 提供 DecodeStruct 方法，此方法是一个 webapi.ApiMethodArgDecodeFunc 。
+// SlimApiMethodStructArgDecoder 提供 DecodeStruct 方法，此方法是一个 webapi.ApiMethodArgDecodeFunc 。
 // 其定义了 SlimAPI 协议的参数解析过程。当前类型的默认值（zero value）即可保被使用。
-type slimApiMethodStructArgDecoder struct {
+type SlimApiMethodStructArgDecoder struct {
 }
 
 // DecodeStruct 是一个 webapi.ApiMethodArgDecodeFunc ，用于解析 SlimAPI 协议的参数。
-func (d slimApiMethodStructArgDecoder) DecodeStruct(state *webapi.ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
+func (d SlimApiMethodStructArgDecoder) DecodeStruct(state *webapi.ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
 	if argType.Kind() != reflect.Struct {
 		return false, nil, nil
 	}
@@ -42,7 +42,7 @@ func (d slimApiMethodStructArgDecoder) DecodeStruct(state *webapi.ApiState, inde
 }
 
 // paramMap 将各类参数存入 map[string]interface{} 。
-func (d slimApiMethodStructArgDecoder) paramMap(state *webapi.ApiState) (map[string]interface{}, error) {
+func (d SlimApiMethodStructArgDecoder) paramMap(state *webapi.ApiState) (map[string]interface{}, error) {
 	format := getRequestFormat(state)
 	if format == "" {
 		webapi.PanicApiError(state, nil, "missing request format")
@@ -79,7 +79,7 @@ func (d slimApiMethodStructArgDecoder) paramMap(state *webapi.ApiState) (map[str
 	return nil, nil // never run
 }
 
-func (d slimApiMethodStructArgDecoder) readQueryStringBody(state *webapi.ApiState, contentType string) map[string]interface{} {
+func (d SlimApiMethodStructArgDecoder) readQueryStringBody(state *webapi.ApiState, contentType string) map[string]interface{} {
 	// 将整个 body 作为 query-string 读取。不知道 body 实际上会上送什么样的数据，做一层防御，限制读取数据的最大大小。
 	reader := io.LimitReader(state.RawRequest.Body, maxMemorySizeParseRequestBody)
 	buf := new(strings.Builder)
@@ -100,7 +100,7 @@ func (d slimApiMethodStructArgDecoder) readQueryStringBody(state *webapi.ApiStat
 	return m
 }
 
-func (d slimApiMethodStructArgDecoder) readMultiPartBody(state *webapi.ApiState) (map[string]interface{}, error) {
+func (d SlimApiMethodStructArgDecoder) readMultiPartBody(state *webapi.ApiState) (map[string]interface{}, error) {
 	req := state.RawRequest
 	err := req.ParseMultipartForm(maxMemorySizeParseRequestBody)
 	if err != nil {
@@ -124,7 +124,7 @@ func (d slimApiMethodStructArgDecoder) readMultiPartBody(state *webapi.ApiState)
 	return m, nil
 }
 
-func (d slimApiMethodStructArgDecoder) readJsonBody(state *webapi.ApiState) (map[string]interface{}, error) {
+func (d SlimApiMethodStructArgDecoder) readJsonBody(state *webapi.ApiState) (map[string]interface{}, error) {
 	body, err := io.ReadAll(state.RawRequest.Body)
 	if err != nil {
 		err = errx.Wrap("slimApiDecoder: read body", err)
