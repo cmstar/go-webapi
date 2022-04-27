@@ -25,7 +25,7 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "F1",
 		runMethods: RUN_ALL,
-		requestInput: map[string]interface{}{
+		requestBody: map[string]interface{}{
 			"i": 3, // 大小写不敏感。
 		},
 		expected: []interface{}{
@@ -36,12 +36,46 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "F3",
 		runMethods: RUN_ALL,
-		requestInput: map[string]interface{}{ /* input */
+		requestBody: map[string]interface{}{
 			"i":           123,
 			"stringField": "ss",
 			"F":           "1.5",
 		},
-		expected: []interface{}{ /* expected */
+		expected: []interface{}{
+			simpleIn{123, "ss", float32(1.5), 0},
+		},
+	})
+
+	p.testOne(testOneArgs{
+		methodName: "F3Mix",
+		runMethods: RUN_GETPOST,
+		requestQuery: map[string]interface{}{
+			"StringField": "part1", // 大小写不敏感，两个 StringField 会被合并。
+			"noUse":       3,
+		},
+		requestBody: map[string]interface{}{
+			"i":           123,
+			"stringfield": "part2",
+			"F":           "1.5",
+		},
+		expected: []interface{}{
+			simpleIn{123, "part1,part2", float32(1.5), 0},
+		},
+	})
+
+	p.testOne(testOneArgs{
+		methodName: "F3Mix",
+		runMethods: RUN_JSON,
+		requestQuery: map[string]interface{}{
+			"stringfield": "override", // JSON 格式下，被覆盖。
+			"noUse":       3,
+		},
+		requestBody: map[string]interface{}{
+			"i":           123,
+			"stringField": "ss",
+			"F":           "1.5",
+		},
+		expected: []interface{}{
 			simpleIn{123, "ss", float32(1.5), 0},
 		},
 	})
@@ -50,7 +84,7 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "Ptr",
 		runMethods: RUN_ALL,
-		requestInput: map[string]interface{}{
+		requestBody: map[string]interface{}{
 			"PTR": valString,
 		},
 		expected: []interface{}{
@@ -61,7 +95,7 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "Slice",
 		runMethods: RUN_ALL,
-		requestInput: map[string]interface{}{
+		requestBody: map[string]interface{}{
 			"Sl": "11~22~33",
 		},
 		expected: []interface{}{
@@ -72,7 +106,7 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "Complex",
 		runMethods: RUN_JSON, // 嵌套复杂类型不支持 GET 。
-		requestInput: map[string]interface{}{
+		requestBody: map[string]interface{}{
 			"F3Slice": []interface{}{
 				map[string]interface{}{"I": 12},
 				map[string]interface{}{"StringField": "gg"},
@@ -151,7 +185,7 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "CannotConvert",
 		runMethods: RUN_GET,
-		requestInput: map[string]interface{}{
+		requestBody: map[string]interface{}{
 			"C": 1,
 		},
 		errPattern:      "bad request",
@@ -181,6 +215,7 @@ type simpleIn struct {
 }
 
 func (slimApiDecoderTestProvider) F3(simpleIn)                 {}
+func (slimApiDecoderTestProvider) F3Mix(simpleIn)              {}
 func (slimApiDecoderTestProvider) Ptr(struct{ Ptr *string })   {}
 func (slimApiDecoderTestProvider) Slice(struct{ Sl []uint64 }) {}
 
@@ -230,7 +265,8 @@ type testOneArgs struct {
 	methodName      string                 // 方法名称。
 	tag             string                 // 用于备注测试用例。
 	runMethods      RunRequestType         // 位标记，指定要执行的请求类型。
-	requestInput    map[string]interface{} // 输入参数。通过 HTTP 请求发送，反序列化后传给 methodName 对应方法。
+	requestQuery    map[string]interface{} // 固定放在 URL 上的输入参数。通过 HTTP 请求发送，反序列化后传给 methodName 对应方法。
+	requestBody     map[string]interface{} // Body 部分的输入参数。 GET 时会和 requestQuery 合并在一起。
 	expected        []interface{}          // 预期的解析结果，顺序需和 methodName 对应方法的入参一致。可以用 ExpectedSpecialType 指代特定类型。
 	errPattern      string                 // 断言 ApiState.Error 的消息。
 	panicMsgPattern string                 // 正则，用于验证 panic 的消息；若预期不会 panic ，则为空。
@@ -250,9 +286,15 @@ func (p slimApiDecoderTestProvider) testOne(args testOneArgs) {
 	if args.expected == nil {
 		expected = make([]interface{}, 0)
 	}
-	input := args.requestInput
-	if input == nil {
-		input = make(map[string]interface{})
+
+	requestQuery := args.requestQuery
+	if requestQuery == nil {
+		requestQuery = make(map[string]interface{})
+	}
+
+	requestBody := args.requestBody
+	if requestBody == nil {
+		requestBody = make(map[string]interface{})
 	}
 
 	buildTestName := func(runMethod string) string {
@@ -268,7 +310,7 @@ func (p slimApiDecoderTestProvider) testOne(args testOneArgs) {
 			if args.panicMsgPattern != "" {
 				defer func() { checkRecoveredError(t, recover()) }()
 			}
-			p.doTestGet(args.methodName, input, expected, args.errPattern)
+			p.doTestGet(args.methodName, requestQuery, requestBody, expected, args.errPattern)
 		})
 	}
 
@@ -277,7 +319,7 @@ func (p slimApiDecoderTestProvider) testOne(args testOneArgs) {
 			if args.panicMsgPattern != "" {
 				defer func() { checkRecoveredError(t, recover()) }()
 			}
-			p.doTestPostForm(args.methodName, input, expected, args.errPattern)
+			p.doTestPostForm(args.methodName, requestQuery, requestBody, expected, args.errPattern)
 		})
 	}
 
@@ -286,7 +328,7 @@ func (p slimApiDecoderTestProvider) testOne(args testOneArgs) {
 			if args.panicMsgPattern != "" {
 				defer func() { checkRecoveredError(t, recover()) }()
 			}
-			p.doTestPostJson(args.methodName, input, expected, args.errPattern)
+			p.doTestPostJson(args.methodName, requestQuery, requestBody, expected, args.errPattern)
 		})
 	}
 
@@ -295,15 +337,32 @@ func (p slimApiDecoderTestProvider) testOne(args testOneArgs) {
 			if args.panicMsgPattern != "" {
 				defer func() { checkRecoveredError(t, recover()) }()
 			}
-			p.doTestMultipartForm(args.methodName, input, expected, args.errPattern)
+			p.doTestMultipartForm(args.methodName, requestQuery, requestBody, expected, args.errPattern)
 		})
 	}
 }
 
-func (p slimApiDecoderTestProvider) doTestGet(methodName string, input map[string]interface{}, expected []interface{}, errPattern string) {
+func (p slimApiDecoderTestProvider) doTestGet(
+	methodName string,
+	requestQuery map[string]interface{},
+	requestBody map[string]interface{}, // Merge with requestQuery.
+	expected []interface{},
+	errPattern string,
+) {
 	url := urlBase
-	if len(input) > 0 {
-		url += "?" + p.buildQueryString(input)
+	marked := false
+	if len(requestQuery) > 0 {
+		url += "?" + p.buildQueryString(requestQuery)
+		marked = true
+	}
+
+	if len(requestBody) > 0 {
+		if marked {
+			url += "&"
+		} else {
+			url += "?"
+		}
+		url += p.buildQueryString(requestBody)
 	}
 
 	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, url, webapitest.NewStateSetup{})
@@ -311,22 +370,42 @@ func (p slimApiDecoderTestProvider) doTestGet(methodName string, input map[strin
 }
 
 func (p slimApiDecoderTestProvider) doTestPostForm(
-	methodName string, input map[string]interface{}, expected []interface{}, errPattern string) {
-	query := p.buildQueryString(input)
-	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, urlBase, webapitest.NewStateSetup{
+	methodName string,
+	requestQuery map[string]interface{},
+	requestBody map[string]interface{},
+	expected []interface{},
+	errPattern string,
+) {
+	url := urlBase
+	if len(requestQuery) > 0 {
+		url += "?" + p.buildQueryString(requestQuery)
+	}
+
+	body := p.buildQueryString(requestBody)
+	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, url, webapitest.NewStateSetup{
 		HttpMethod:  "POST",
 		ContentType: webapi.ContentTypeForm,
-		BodyString:  query,
+		BodyString:  body,
 	})
 	p.doTestDocode(state, methodName, meta_RequestFormat_Post, expected, errPattern)
 }
 
 func (p slimApiDecoderTestProvider) doTestPostJson(
-	methodName string, input map[string]interface{}, expected []interface{}, errPattern string) {
-	jsonBytes, err := json.Marshal(input)
+	methodName string,
+	requestQuery map[string]interface{},
+	requestBody map[string]interface{},
+	expected []interface{},
+	errPattern string,
+) {
+	url := urlBase
+	if len(requestQuery) > 0 {
+		url += "?" + p.buildQueryString(requestQuery)
+	}
+
+	jsonBytes, err := json.Marshal(requestBody)
 	require.NoError(p.t, err, "to json")
 
-	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, urlBase, webapitest.NewStateSetup{
+	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, url, webapitest.NewStateSetup{
 		HttpMethod:  "POST",
 		ContentType: webapi.ContentTypeJson,
 		BodyReader:  bytes.NewBuffer(jsonBytes),
@@ -335,10 +414,20 @@ func (p slimApiDecoderTestProvider) doTestPostJson(
 }
 
 func (p slimApiDecoderTestProvider) doTestMultipartForm(
-	methodName string, input map[string]interface{}, expected []interface{}, errPattern string) {
+	methodName string,
+	requestQuery map[string]interface{},
+	requestBody map[string]interface{},
+	expected []interface{},
+	errPattern string,
+) {
+	url := urlBase
+	if len(requestQuery) > 0 {
+		url += "?" + p.buildQueryString(requestQuery)
+	}
+
 	buf := new(bytes.Buffer)
 	w := multipart.NewWriter(buf)
-	for k, v := range input {
+	for k, v := range requestBody {
 		w.WriteField(k, fmt.Sprintf("%v", v))
 	}
 	err := w.Close()
@@ -350,7 +439,7 @@ func (p slimApiDecoderTestProvider) doTestMultipartForm(
 	bodyBytes, _ := io.ReadAll(buf)
 	bodyString := string(bodyBytes)
 
-	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, urlBase, webapitest.NewStateSetup{
+	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, url, webapitest.NewStateSetup{
 		HttpMethod:  "POST",
 		ContentType: w.FormDataContentType(),
 		BodyReader:  strings.NewReader(bodyString),
