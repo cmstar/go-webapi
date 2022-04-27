@@ -125,6 +125,14 @@ func Test_slimApiNameResolver_FillMethod(t *testing.T) {
 		callback:            "",
 	})
 
+	// Content-Type 分后后的部分被忽略。
+	testOne("?~method=name&with_charset=1", webapi.ContentTypeForm+"; charset=utf8", want{
+		name:                "name",
+		requestFormat:       meta_RequestFormat_Post,
+		responseContentType: webapi.ContentTypeJson,
+		callback:            "",
+	})
+
 	// ~format 优先级比 Content-Type 高。
 	testOne("?~method=name&~format=json", webapi.ContentTypeForm, want{
 		name:                "name",
@@ -205,7 +213,7 @@ func Test_slimApiNameResolver_FillMethod(t *testing.T) {
 		},
 	})
 
-	testOne("no-query", webapi.ContentTypeJson, want{
+	testOne("no-query", webapi.ContentTypeJson+" ; charset=utf8", want{
 		name:                "name",
 		requestFormat:       meta_RequestFormat_Json,
 		responseContentType: webapi.ContentTypePlainText,

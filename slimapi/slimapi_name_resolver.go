@@ -59,6 +59,11 @@ func (d *slimApiNameResolver) FillMethod(state *webapi.ApiState) {
 	// format 没有通过参数直接指定格式的情况下，尝试从 Content-Type 判断。
 	if format == "" {
 		contentType := req.Header.Get(webapi.HttpHeaderContentType)
+
+		// Content-Type 可以被分号分隔，如 “text/html; charset=UTF-8”，我们只需要前面这段。
+		contentType = strings.Split(contentType, ";")[0]
+		contentType = strings.TrimSpace(contentType)
+
 		switch contentType {
 		case webapi.ContentTypeJson:
 			requestFormat = meta_RequestFormat_Json
