@@ -3,9 +3,9 @@ module github.com/cmstar/go-webapi
 go 1.17
 
 require (
-	github.com/cmstar/go-conv v0.3.1
-	github.com/cmstar/go-errx v1.4.1
-	github.com/cmstar/go-logx v1.2.0
+	github.com/cmstar/go-conv v0.4.1
+	github.com/cmstar/go-errx v1.4.2
+	github.com/cmstar/go-logx v1.3.0
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/stretchr/testify v1.7.0
 )
