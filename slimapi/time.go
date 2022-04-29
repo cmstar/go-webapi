@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	// SlimAPI 协议里默认的时间格式： yyyyMMdd HH:mm:ss 。 API 输出 JSON 时使用此格式。
+	// SlimAPI 协议里默认的时间格式： yyyy-MM-dd HH:mm:ss 。 API 输出 JSON 时使用此格式。
 	TimeFormat = "2006-01-02 15:04:05"
 
 	// SlimAPI 协议里默认的时间格式的微秒版本，解析时间时使用此格式。
