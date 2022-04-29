@@ -5,7 +5,7 @@
 [![codecov](https://codecov.io/gh/cmstar/go-webapi/branch/master/graph/badge.svg)](https://codecov.io/gh/cmstar/go-webapi)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](https://opensource.org/licenses/MIT)
 
-这是[SlimWebApi](https://github.com/cmstar/SlimWebApi)的 Go 版。 SlimAPI 通信协议详见[godoc](https://pkg.go.dev/github.com/cmstar/go-webapi#pkg-overview)。
+这是[SlimWebApi](https://github.com/cmstar/SlimWebApi)的 Go 版。 SlimAPI 通信协议详见[godoc-SlimAPI通信协议](https://pkg.go.dev/github.com/cmstar/go-webapi/slimapi#pkg-overview)。
 
 ## 快速使用
 
