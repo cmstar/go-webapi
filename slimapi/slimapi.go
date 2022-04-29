@@ -1,4 +1,3 @@
-// slimapi 包基于 webapi ，实现基于 SlimAPI 协议的开发框架。
 package slimapi
 
 import (
