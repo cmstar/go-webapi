@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cmstar/go-webapi"
 	"github.com/cmstar/go-webapi/webapitest"
@@ -47,7 +48,8 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	})
 
 	p.testOne(testOneArgs{
-		methodName: "F3Mix",
+		methodName: "F3",
+		tag:        "mix",
 		runMethods: RUN_GETPOST,
 		requestQuery: map[string]interface{}{
 			"StringField": "part1", // 大小写不敏感，两个 StringField 会被合并。
@@ -64,7 +66,8 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	})
 
 	p.testOne(testOneArgs{
-		methodName: "F3Mix",
+		methodName: "F3",
+		tag:        "override",
 		runMethods: RUN_JSON,
 		requestQuery: map[string]interface{}{
 			"stringfield": "override", // JSON 格式下，被覆盖。
@@ -100,6 +103,54 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 		},
 		expected: []interface{}{
 			struct{ Sl []uint64 }{[]uint64{11, 22, 33}},
+		},
+	})
+
+	p.testOne(testOneArgs{
+		methodName: "Time",
+		tag:        "short",
+		runMethods: RUN_ALL,
+		requestBody: map[string]interface{}{
+			"Std": "2022-04-17 21:18:25",
+			"Loc": "2022-11-03 07:30:06",
+		},
+		expected: []interface{}{
+			timeIn{
+				Std: time.Date(2022, 4, 17, 21, 18, 25, 0, time.UTC),
+				Loc: Time(time.Date(2022, 11, 03, 7, 30, 6, 0, time.UTC)),
+			},
+		},
+	})
+
+	p.testOne(testOneArgs{
+		methodName: "Time",
+		tag:        "long",
+		runMethods: RUN_ALL,
+		requestBody: map[string]interface{}{
+			"Std": "2022-04-17 21:18:25.12345",
+			"Loc": "2022-11-03 07:30:06.321",
+		},
+		expected: []interface{}{
+			timeIn{
+				Std: time.Date(2022, 4, 17, 21, 18, 25, int(123450*time.Microsecond), time.UTC),
+				Loc: Time(time.Date(2022, 11, 03, 7, 30, 6, int(321*time.Millisecond), time.UTC)),
+			},
+		},
+	})
+
+	p.testOne(testOneArgs{
+		methodName: "Time",
+		tag:        "RFC3339",
+		runMethods: RUN_ALL,
+		requestBody: map[string]interface{}{
+			"Std": "2022-04-17T21:18:25.12345Z",
+			"Loc": "2022-11-03T07:30:06.321Z",
+		},
+		expected: []interface{}{
+			timeIn{
+				Std: time.Date(2022, 4, 17, 21, 18, 25, int(123450*time.Microsecond), time.UTC),
+				Loc: Time(time.Date(2022, 11, 03, 7, 30, 6, int(321*time.Millisecond), time.UTC)),
+			},
 		},
 	})
 
@@ -214,10 +265,15 @@ type simpleIn struct {
 	Ignored     int
 }
 
+type timeIn struct {
+	Std time.Time
+	Loc Time
+}
+
 func (slimApiDecoderTestProvider) F3(simpleIn)                 {}
-func (slimApiDecoderTestProvider) F3Mix(simpleIn)              {}
 func (slimApiDecoderTestProvider) Ptr(struct{ Ptr *string })   {}
 func (slimApiDecoderTestProvider) Slice(struct{ Sl []uint64 }) {}
+func (slimApiDecoderTestProvider) Time(timeIn)                 {}
 
 type complexIn struct {
 	F3Slice []*simpleIn

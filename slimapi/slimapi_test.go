@@ -194,6 +194,18 @@ func TestSlimApi_SumAndShowMap_decodeError(t *testing.T) {
 	})
 }
 
+func TestSlimApi_Time_json(t *testing.T) {
+	DoIntergrationTest(t, intergrationTestArgs{
+		requestRelativeUrl: "?Time",
+		requestContentType: "application/json",
+		requestBody:        `{ "T":"2022-01-15 18:22:59" }`,
+		requestRouteParam:  map[string]string{},
+		wantStatusCode:     200,
+		wantContentType:    webapi.ContentTypeJson,
+		wantBody:           `{"Code":0,"Message":"","Data":{"T":"2022-01-15 18:22:59"}}`,
+	})
+}
+
 func TestSlimApi_ShowError_noError(t *testing.T) {
 	DoIntergrationTest(t, intergrationTestArgs{
 		requestRelativeUrl: "?ShowError&S=gg",
@@ -338,6 +350,11 @@ func (intergrationTestMethodProvider) SumAndShowMap(args SumAndShowMapRequest) S
 		Sum: sum,
 		M:   args.M,
 	}
+}
+
+func (intergrationTestMethodProvider) Time(req struct{ T Time }) struct{ T Time } {
+	req.T = Time(req.T.Time().UTC())
+	return req
 }
 
 const (

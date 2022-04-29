@@ -44,6 +44,9 @@ var slimApiConv = conv.Conv{
 			},
 		},
 
+		// 支持 SlimAPI 规定的时间格式 yyyyMMdd HH:mm:ss 。
+		StringToTime: parseTime,
+
 		// 支持字符串到数组的转换，使用 ~ 分割，如将 "1~2~3" 转为 [1, 2, 3] 。
 		StringSplitter: func(v string) []string { return strings.Split(v, "~") },
 	},
