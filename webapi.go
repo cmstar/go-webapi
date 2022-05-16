@@ -178,6 +178,8 @@ func CreateHandlerFunc(handler ApiHandler, logFinder logx.LogFinder) http.Handle
 	return func(w http.ResponseWriter, r *http.Request) {
 		state := NewState(w, r, handler)
 
+		handler.FillUserHost(state)
+
 		// 把比较可能 panic 的步骤抽出来，添加一个 defer 捕获错误并填到 state.Error 是上，使 panic 后仍
 		// 可以预定义的报文返回结果。
 		handleRequest(state, handler, logFinder)
