@@ -57,7 +57,7 @@ func NewSlimApiHandler(name string) *webapi.ApiHandlerWrapper {
 	return &webapi.ApiHandlerWrapper{
 		HandlerName:         name,
 		HttpMethods:         []string{"GET", "POST"},
-		ApiNameResolver:     NewSlimApiNameResover(),
+		ApiNameResolver:     NewSlimApiNameResolver(),
 		ApiDecoder:          NewSlimApiDecoder(),
 		ApiMethodCaller:     webapi.NewBasicApiMethodCaller(),
 		ApiResponseBuilder:  webapi.NewBasicApiResponseBuilder(),

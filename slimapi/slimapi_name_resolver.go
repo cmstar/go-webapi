@@ -10,8 +10,8 @@ import (
 type slimApiNameResolver struct {
 }
 
-// NewSlimApiNameResover 返回用于 SlimAPI 协议的 webapi.ApiNameResolver 实现。
-func NewSlimApiNameResover() webapi.ApiNameResolver {
+// NewSlimApiNameResolver 返回用于 SlimAPI 协议的 webapi.ApiNameResolver 实现。
+func NewSlimApiNameResolver() webapi.ApiNameResolver {
 	return &slimApiNameResolver{}
 }
 

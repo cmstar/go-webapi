@@ -422,7 +422,7 @@ func (p slimApiDecoderTestProvider) doTestGet(
 	}
 
 	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, url, webapitest.NewStateSetup{})
-	p.doTestDocode(state, methodName, meta_RequestFormat_Get, expected, errPattern)
+	p.doTestDecode(state, methodName, meta_RequestFormat_Get, expected, errPattern)
 }
 
 func (p slimApiDecoderTestProvider) doTestPostForm(
@@ -443,7 +443,7 @@ func (p slimApiDecoderTestProvider) doTestPostForm(
 		ContentType: webapi.ContentTypeForm,
 		BodyString:  body,
 	})
-	p.doTestDocode(state, methodName, meta_RequestFormat_Post, expected, errPattern)
+	p.doTestDecode(state, methodName, meta_RequestFormat_Post, expected, errPattern)
 }
 
 func (p slimApiDecoderTestProvider) doTestPostJson(
@@ -466,7 +466,7 @@ func (p slimApiDecoderTestProvider) doTestPostJson(
 		ContentType: webapi.ContentTypeJson,
 		BodyReader:  bytes.NewBuffer(jsonBytes),
 	})
-	p.doTestDocode(state, methodName, meta_RequestFormat_Json, expected, errPattern)
+	p.doTestDecode(state, methodName, meta_RequestFormat_Json, expected, errPattern)
 }
 
 func (p slimApiDecoderTestProvider) doTestMultipartForm(
@@ -500,7 +500,7 @@ func (p slimApiDecoderTestProvider) doTestMultipartForm(
 		ContentType: w.FormDataContentType(),
 		BodyReader:  strings.NewReader(bodyString),
 	})
-	p.doTestDocode(state, methodName, meta_RequestFormat_Post, expected, errPattern)
+	p.doTestDecode(state, methodName, meta_RequestFormat_Post, expected, errPattern)
 }
 
 func (slimApiDecoderTestProvider) buildQueryString(nameValues map[string]interface{}) string {
@@ -514,7 +514,7 @@ func (slimApiDecoderTestProvider) buildQueryString(nameValues map[string]interfa
 	return res
 }
 
-func (p slimApiDecoderTestProvider) doTestDocode(
+func (p slimApiDecoderTestProvider) doTestDecode(
 	state *webapi.ApiState, methodName string, format string, expected []interface{}, errPattern string) {
 	setRequestFormat(state, format)
 	state.Method = webapi.ApiMethod{

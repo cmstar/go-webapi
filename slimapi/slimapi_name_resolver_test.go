@@ -69,7 +69,7 @@ func Test_slimApiNameResolver_FillMethod(t *testing.T) {
 				}()
 			}
 
-			resolver := NewSlimApiNameResover()
+			resolver := NewSlimApiNameResolver()
 			resolver.FillMethod(state)
 
 			assert.Equal(t, want.name, state.Name)
