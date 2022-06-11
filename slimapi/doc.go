@@ -46,9 +46,9 @@ URL 形式3
 SlimAPI 请求参数的格式
 
 请求参数
-- GET 参数体现在 URL 上，形如 data=1&name=abc&time=2014-4-8 。
-- 表单 以 POST 方式放在HTTP BODY中。
-- JSON 只能使用 POST 方式上送。
+	- GET 参数体现在 URL 上，形如 data=1&name=abc&time=2014-4-8 。
+	- 表单 以 POST 方式放在HTTP BODY中。
+	- JSON 只能使用 POST 方式上送。
 
 可在 GET/表单参数中传递简单的数组，数组元素间使用 ~ 分割，如 1~2~3~4~5 可表示数组 [1, 2, 3, 4, 5]。
 
