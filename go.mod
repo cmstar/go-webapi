@@ -1,6 +1,6 @@
 module github.com/cmstar/go-webapi
 
-go 1.17
+go 1.18
 
 require (
 	github.com/cmstar/go-conv v0.4.1
