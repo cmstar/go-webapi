@@ -38,7 +38,7 @@ const (
 )
 
 // ApiResponse 用于表示返回的数据。
-type ApiResponse struct {
+type ApiResponse[T any] struct {
 	// 状态码， 0 表示一个成功的请求，其他值表示有错误。
 	Code int
 
@@ -46,10 +46,10 @@ type ApiResponse struct {
 	Message string
 
 	// Data 记录返回的数据本体。
-	Data interface{}
+	Data T
 }
 
 // SuccessResponse 返回一个表示成功的 ApiResponse 。
-func SuccessResponse(data interface{}) *ApiResponse {
-	return &ApiResponse{Data: data}
+func SuccessResponse[T any](data T) *ApiResponse[T] {
+	return &ApiResponse[T]{Data: data}
 }

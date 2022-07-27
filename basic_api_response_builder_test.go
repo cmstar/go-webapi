@@ -18,7 +18,7 @@ func Test_basicApiResponseBuilder_BuildResponse(t *testing.T) {
 			Error: nil,
 		}
 		b.BuildResponse(state)
-		expect := ApiResponse{
+		expect := ApiResponse[any]{
 			Code:    0,
 			Message: "",
 			Data:    123,
@@ -32,7 +32,7 @@ func Test_basicApiResponseBuilder_BuildResponse(t *testing.T) {
 			Error: errx.NewBizError(12, "m", nil),
 		}
 		b.BuildResponse(state)
-		expect := ApiResponse{
+		expect := ApiResponse[any]{
 			Code:    12,
 			Message: "m",
 			Data:    "d",
@@ -46,7 +46,7 @@ func Test_basicApiResponseBuilder_BuildResponse(t *testing.T) {
 			Error: errx.Wrap("p1", fmt.Errorf("p2: %w", errx.NewBizError(123, "mm", nil))),
 		}
 		b.BuildResponse(state)
-		expect := ApiResponse{
+		expect := ApiResponse[any]{
 			Code:    123,
 			Message: "mm",
 			Data:    "d",
@@ -60,7 +60,7 @@ func Test_basicApiResponseBuilder_BuildResponse(t *testing.T) {
 			Error: CreateBadRequestError(nil, nil, "x"),
 		}
 		b.BuildResponse(state)
-		expect := ApiResponse{
+		expect := ApiResponse[any]{
 			Code:    ErrorCodeBadRequest,
 			Message: "bad request",
 			Data:    "d",
@@ -82,7 +82,7 @@ func Test_basicApiResponseBuilder_BuildResponse(t *testing.T) {
 			Error: err,
 		}
 		b.BuildResponse(state)
-		expect := ApiResponse{
+		expect := ApiResponse[any]{
 			Code:    ErrorCodeBadRequest,
 			Message: "bad request",
 			Data:    "d",
@@ -96,7 +96,7 @@ func Test_basicApiResponseBuilder_BuildResponse(t *testing.T) {
 			Error: errors.New("gg"),
 		}
 		b.BuildResponse(state)
-		expect := ApiResponse{
+		expect := ApiResponse[any]{
 			Code:    ErrorCodeInternalError,
 			Message: "internal error",
 			Data:    nil,

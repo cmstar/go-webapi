@@ -12,7 +12,7 @@ import (
 
 func Test_slimApiResponseWriter_WriteResponse(t *testing.T) {
 	type args struct {
-		response         *webapi.ApiResponse
+		response         *webapi.ApiResponse[any]
 		callback         string
 		wantBody         string
 		wantPanicPattern string
@@ -47,7 +47,7 @@ func Test_slimApiResponseWriter_WriteResponse(t *testing.T) {
 	}
 
 	testOne("empty", args{
-		response: &webapi.ApiResponse{
+		response: &webapi.ApiResponse[any]{
 			Code:    0,
 			Message: "",
 			Data:    "",
@@ -58,7 +58,7 @@ func Test_slimApiResponseWriter_WriteResponse(t *testing.T) {
 	})
 
 	testOne("ok", args{
-		response: &webapi.ApiResponse{
+		response: &webapi.ApiResponse[any]{
 			Code:    0,
 			Message: "",
 			Data:    map[string]int{"a": 1, "b": 2},
@@ -69,7 +69,7 @@ func Test_slimApiResponseWriter_WriteResponse(t *testing.T) {
 	})
 
 	testOne("callback", args{
-		response: &webapi.ApiResponse{
+		response: &webapi.ApiResponse[any]{
 			Code:    0,
 			Message: "",
 			Data:    "",
@@ -84,7 +84,7 @@ func Test_slimApiResponseWriter_WriteResponse(t *testing.T) {
 	})
 
 	testOne("panic-json-marshal", args{
-		response: &webapi.ApiResponse{
+		response: &webapi.ApiResponse[any]{
 			Data: make(chan int),
 		},
 		wantPanicPattern: "json encoding error",

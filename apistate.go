@@ -55,7 +55,7 @@ type ApiState struct {
 	Error error
 
 	// Response 记录 WebAPI 返回的结果的抽象结构。
-	Response *ApiResponse
+	Response *ApiResponse[any]
 
 	// ResponseBody 提供实际返回的 HTTP body 的数据。
 	ResponseBody io.Reader

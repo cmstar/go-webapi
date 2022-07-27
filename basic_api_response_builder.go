@@ -18,7 +18,7 @@ func NewBasicApiResponseBuilder() ApiResponseBuilder {
 
 // BuildResponse implements ApiResponseBuilder.BuildResponse
 func (r *basicApiResponseBuilder) BuildResponse(state *ApiState) {
-	resp := &ApiResponse{
+	resp := &ApiResponse[any]{
 		Data: state.Data,
 	}
 	state.Response = resp
