@@ -53,3 +53,19 @@ type ApiResponse[T any] struct {
 func SuccessResponse[T any](data T) *ApiResponse[T] {
 	return &ApiResponse[T]{Data: data}
 }
+
+// BadRequestResponse 返回一个表示不合规的请求的 ApiResponse 。
+func BadRequestResponse() *ApiResponse[any] {
+	return &ApiResponse[any]{
+		Code:    ErrorCodeBadRequest,
+		Message: "bad request",
+	}
+}
+
+// InternalErrorResponse 返回一个表示不合规的请求的 ApiResponse 。
+func InternalErrorResponse() *ApiResponse[any] {
+	return &ApiResponse[any]{
+		Code:    ErrorCodeInternalError,
+		Message: "internal error",
+	}
+}
