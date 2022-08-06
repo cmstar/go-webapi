@@ -40,7 +40,7 @@ func Test_slimApiLogger_Log(t *testing.T) {
 				body:     "",
 				err:      nil,
 			},
-			wantHeader: `level=INFO message= Ip=local Url=/a/b/c`,
+			wantHeader: `level=INFO message= IP=local URL=/a/b/c`,
 		},
 
 		{
@@ -51,7 +51,7 @@ func Test_slimApiLogger_Log(t *testing.T) {
 				body:     "the_body",
 				err:      nil,
 			},
-			wantHeader: `level=INFO message= Ip= Url=/ Length=8 Body=the_body`,
+			wantHeader: `level=INFO message= IP= URL=/ Length=8 Body=the_body`,
 		},
 
 		{
@@ -62,7 +62,7 @@ func Test_slimApiLogger_Log(t *testing.T) {
 				body:     "",
 				err:      errors.New("this is error"),
 			},
-			wantHeader: `level=ERROR message= Ip= Url=/ ErrorType=errorString Error=this is error`,
+			wantHeader: `level=ERROR message= IP= URL=/ ErrorType=errorString Error=this is error`,
 		},
 
 		{
@@ -73,7 +73,7 @@ func Test_slimApiLogger_Log(t *testing.T) {
 				body:     "",
 				err:      webapi.CreateBadRequestError(nil, nil, "gg"),
 			},
-			wantHeader: `level=ERROR message= Ip= Url=/ ErrorType=BadRequestError Error=gg`,
+			wantHeader: `level=ERROR message= IP= URL=/ ErrorType=BadRequestError Error=gg`,
 		},
 
 		{
@@ -84,7 +84,7 @@ func Test_slimApiLogger_Log(t *testing.T) {
 				body:     "",
 				err:      errx.NewBizError(10000, "mm", errors.New("inner")),
 			},
-			wantHeader: "level=WARN message= Ip= Url=/ ErrorType=BizError Error=(10000) mm\n--- ",
+			wantHeader: "level=WARN message= IP= URL=/ ErrorType=BizError Error=(10000) mm\n--- ",
 		},
 
 		{
@@ -95,7 +95,7 @@ func Test_slimApiLogger_Log(t *testing.T) {
 				body:     "",
 				err:      webapi.CreateApiError(nil, nil, "critical error"),
 			},
-			wantHeader: `level=FATAL message= Ip= Url=/ ErrorType=ApiError Error=critical error`,
+			wantHeader: `level=FATAL message= IP= URL=/ ErrorType=ApiError Error=critical error`,
 		},
 
 		{
@@ -107,7 +107,7 @@ func Test_slimApiLogger_Log(t *testing.T) {
 				err:      nil,
 				setup:    setupMultipartForm,
 			},
-			wantHeader: `level=INFO message= Ip= Url=/` +
+			wantHeader: `level=INFO message= IP= URL=/` +
 				` File0=file0 Length0=13 ContentType0=application/octet-stream` +
 				` File1=file1 Length1=23 ContentType1=image/jpeg`,
 		},

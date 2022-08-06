@@ -49,6 +49,14 @@ type ApiState struct {
 	// 若方法没有返回值，此字段为 nil 。
 	Data interface{}
 
+	// 输出日志时的日志级别。若为 0 ，则使用默认级别（由 [ApiLogger] 决定）。
+	LogLevel logx.Level
+
+	// LogMessage 用于记录各个处理流程中的日志信息，用于在 [ApiLogger] 中的输出。
+	// 最终日志的输出由 [ApiLogger] 决定，这只是一个缓冲（ buffer ）。
+	// key-value 对，与 [logx.Logger.Log] 的 keyValues 参数定义一致。
+	LogMessage []any
+
 	// Error 记录 ApiMethodCaller.Call() 方法所调用的具体 WebAPI 方法返回的 error 值；
 	// 或记录 ApiDecoder 和 ApiMethodCaller 处理过程中 panic 的错误。没有错误时为 nil 。
 	// ApiResponseBuilder.BuildResponse() 能够将此错误转换为对应的 ApiResponse 。
