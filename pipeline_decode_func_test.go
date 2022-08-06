@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_uniqueApiMethodDecoder_Decode(t *testing.T) {
+func TestDecodeFuncPipeline(t *testing.T) {
 	decodeInt := func(state *ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
 		if argType.Kind() != reflect.Int {
 			return false, nil, nil
@@ -33,7 +33,7 @@ func Test_uniqueApiMethodDecoder_Decode(t *testing.T) {
 		}
 		return true, nil, nil
 	}
-	decoder := NewUniqueTypeApiMethodDecoder(decodeInt, decodeString, errorOnFloat64, nilOnFloat32)
+	decoder := NewDecodeFuncPipeline(decodeInt, decodeString, errorOnFloat64, nilOnFloat32)
 
 	run := func(fn interface{}) *ApiState {
 		s := &ApiState{

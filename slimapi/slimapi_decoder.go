@@ -11,19 +11,20 @@ import (
 	"github.com/cmstar/go-webapi"
 )
 
-// NewSlimApiDecoder 返回用于 SlimAPI 协议的 webapi.ApiDecoder 实现。
+// NewSlimApiDecoder 返回用于 SlimAPI 协议的 [webapi.ApiDecoder] 实现。
 func NewSlimApiDecoder() webapi.ApiDecoder {
-	d := SlimApiMethodStructArgDecoder{}
-	return webapi.NewUniqueTypeApiMethodDecoder(d.DecodeStruct)
+	return webapi.NewDecodeFuncPipeline(StructArgDecodeFunc())
 }
 
-// SlimApiMethodStructArgDecoder 提供 DecodeStruct 方法，此方法是一个 webapi.ApiMethodArgDecodeFunc 。
-// 其定义了 SlimAPI 协议的参数解析过程。当前类型的默认值（zero value）即可保被使用。
-type SlimApiMethodStructArgDecoder struct {
+// StructArgDecodeFunc 是一个 [webapi.DecodeFunc] ，
+// 定义了 SlimAPI 协议的参数解析过程，用于方法参数表中 struct 类型的参数。
+func StructArgDecodeFunc() webapi.DecodeFunc {
+	return slimApiMethodStructArgDecoder{}.DecodeStruct
 }
 
-// DecodeStruct 是一个 webapi.ApiMethodArgDecodeFunc ，用于解析 SlimAPI 协议的参数。
-func (d SlimApiMethodStructArgDecoder) DecodeStruct(state *webapi.ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
+type slimApiMethodStructArgDecoder struct{}
+
+func (d slimApiMethodStructArgDecoder) DecodeStruct(state *webapi.ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
 	if argType.Kind() != reflect.Struct {
 		return false, nil, nil
 	}
@@ -42,11 +43,11 @@ func (d SlimApiMethodStructArgDecoder) DecodeStruct(state *webapi.ApiState, inde
 }
 
 // paramMap 将各类参数存入 map[string]interface{} 。
-//   1. 参数是大小写不敏感的。
-//   2. URL 上的参数（query）总是会被读取。
-//   3. 表单参数会与 query 合并在一起，同名（大小写不敏感）参数的值会被用逗号拼接起来。
-//   4. JSON 参数会与 query 合并在一起，同名的参数， JSON 的值会将 query 的值覆盖掉。
-func (d SlimApiMethodStructArgDecoder) paramMap(state *webapi.ApiState) (map[string]interface{}, error) {
+//  1. 参数是大小写不敏感的。
+//  2. URL 上的参数（query）总是会被读取。
+//  3. 表单参数会与 query 合并在一起，同名（大小写不敏感）参数的值会被用逗号拼接起来。
+//  4. JSON 参数会与 query 合并在一起，同名的参数， JSON 的值会将 query 的值覆盖掉。
+func (d slimApiMethodStructArgDecoder) paramMap(state *webapi.ApiState) (map[string]interface{}, error) {
 	format := getRequestFormat(state)
 	if format == "" {
 		webapi.PanicApiError(state, nil, "missing request format")
@@ -82,7 +83,7 @@ func (d SlimApiMethodStructArgDecoder) paramMap(state *webapi.ApiState) (map[str
 }
 
 // 读取 URL 上的参数，返回的参数名称总是小写的，值总是 string 。
-func (d SlimApiMethodStructArgDecoder) readQueryInLowercase(state *webapi.ApiState) map[string]interface{} {
+func (d slimApiMethodStructArgDecoder) readQueryInLowercase(state *webapi.ApiState) map[string]interface{} {
 	// 用自己解析的这个 Query 。
 	m := make(map[string]interface{})
 	for k, v := range state.Query.Named {
@@ -91,7 +92,7 @@ func (d SlimApiMethodStructArgDecoder) readQueryInLowercase(state *webapi.ApiSta
 	return m
 }
 
-func (d SlimApiMethodStructArgDecoder) readForm(state *webapi.ApiState, contentType string) map[string]interface{} {
+func (d slimApiMethodStructArgDecoder) readForm(state *webapi.ApiState, contentType string) map[string]interface{} {
 	// 将整个 body 作为 query-string 读取。不知道 body 实际上会上送什么样的数据，做一层防御，限制读取数据的最大大小。
 	reader := io.LimitReader(state.RawRequest.Body, maxMemorySizeParseRequestBody)
 	buf := new(strings.Builder)
@@ -118,7 +119,7 @@ func (d SlimApiMethodStructArgDecoder) readForm(state *webapi.ApiState, contentT
 	return lowercaseParams
 }
 
-func (d SlimApiMethodStructArgDecoder) readMultiPartForm(state *webapi.ApiState) (map[string]interface{}, error) {
+func (d slimApiMethodStructArgDecoder) readMultiPartForm(state *webapi.ApiState) (map[string]interface{}, error) {
 	req := state.RawRequest
 
 	// ParseMultipartForm 会将 URL 和 body 上的参数都合并到 req.Form 上。
@@ -155,7 +156,7 @@ func (d SlimApiMethodStructArgDecoder) readMultiPartForm(state *webapi.ApiState)
 	return lowercaseParams, nil
 }
 
-func (d SlimApiMethodStructArgDecoder) readJsonBody(state *webapi.ApiState) (map[string]interface{}, error) {
+func (d slimApiMethodStructArgDecoder) readJsonBody(state *webapi.ApiState) (map[string]interface{}, error) {
 	body, err := io.ReadAll(state.RawRequest.Body)
 	if err != nil {
 		err = errx.Wrap("slimApiDecoder: read body", err)
