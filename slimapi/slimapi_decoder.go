@@ -12,7 +12,7 @@ import (
 )
 
 // NewSlimApiDecoder 返回用于 SlimAPI 协议的 [webapi.ApiDecoder] 实现。
-func NewSlimApiDecoder() webapi.ApiDecoder {
+func NewSlimApiDecoder() webapi.DecodeFuncPipeline {
 	return webapi.NewDecodeFuncPipeline(StructArgDecodeFunc())
 }
 

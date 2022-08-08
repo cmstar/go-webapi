@@ -5,8 +5,8 @@ import (
 	"github.com/cmstar/go-webapi/logfunc"
 )
 
-// NewSlimApiApiLogger 返回用于 SlimAPI 协议的 webapi.ApiLogger 实现。
-func NewSlimApiApiLogger() webapi.ApiLogger {
+// NewSlimApiApiLogger 返回用于 SlimAPI 协议的 [webapi.ApiLogger] 实现。
+func NewSlimApiApiLogger() webapi.LogFuncPipeline {
 	logBody := func(state *webapi.ApiState) {
 		body := getBufferedBody(state)
 		if len(body) > 0 {
