@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type intergrationTestArgs struct {
+type integrationTestArgs struct {
 	requestRelativeUrl string // 不以 / 开头。
 	requestContentType string
 	requestBody        string
@@ -24,21 +24,21 @@ type intergrationTestArgs struct {
 	wantLogPattern     map[string]string // 可以对每个字段单独用正则匹配。
 }
 
-var handlerForIntergrationTest webapi.ApiHandler
+var handlerForIntegrationTest webapi.ApiHandler
 
 // 承载 API 方法。便于维护，每个 API 方法和对应的测试过程写在一起。
-type intergrationTestMethodProvider struct{}
+type integrationTestMethodProvider struct{}
 
 func init() {
-	handlerForIntergrationTest = NewSlimApiHandler("")
-	handlerForIntergrationTest.RegisterMethods(intergrationTestMethodProvider{})
+	handlerForIntegrationTest = NewSlimApiHandler("")
+	handlerForIntegrationTest.RegisterMethods(integrationTestMethodProvider{})
 }
 
 // 是否向控制台输出捕获到的日志。
 const enableLogOutput = false
 
 // 跑一个集成测试用例，测试 HTTP 请求的输入输出，不测试中间过程。
-func DoIntergrationTest(t *testing.T, args intergrationTestArgs) {
+func DoIntegrationTest(t *testing.T, args integrationTestArgs) {
 	var httpMethod string
 	switch args.requestContentType {
 	case webapi.ContentTypeForm:
@@ -50,7 +50,7 @@ func DoIntergrationTest(t *testing.T, args intergrationTestArgs) {
 	}
 
 	url := "http://temp.org/" + args.requestRelativeUrl
-	state, rec := webapitest.NewStateForTest(handlerForIntergrationTest, url, webapitest.NewStateSetup{
+	state, rec := webapitest.NewStateForTest(handlerForIntegrationTest, url, webapitest.NewStateSetup{
 		HttpMethod:  httpMethod,
 		ContentType: string(args.requestContentType),
 		RouteParams: args.requestRouteParam,
@@ -59,7 +59,7 @@ func DoIntergrationTest(t *testing.T, args intergrationTestArgs) {
 
 	logger := webapitest.NewLogRecorder()
 	logFinder := logx.NewSingleLoggerLogFinder(logger)
-	handlerFunc := webapi.CreateHandlerFunc(handlerForIntergrationTest, logFinder)
+	handlerFunc := webapi.CreateHandlerFunc(handlerForIntegrationTest, logFinder)
 	handlerFunc(state.RawResponse, state.RawRequest)
 
 	a := assert.New(t)
@@ -91,7 +91,7 @@ func DoIntergrationTest(t *testing.T, args intergrationTestArgs) {
 }
 
 func TestSlimApi_Empty(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?Empty",
 		requestContentType: "",
 		requestBody:        "",
@@ -103,7 +103,7 @@ func TestSlimApi_Empty(t *testing.T) {
 }
 
 func TestSlimApi_Plus_get(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?&~method=plus&a=1&b=2",
 		requestContentType: "",
 		requestBody:        "a=3&b=4", // The body should be ignored.
@@ -115,7 +115,7 @@ func TestSlimApi_Plus_get(t *testing.T) {
 }
 
 func TestSlimApi_Plus_post(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?~format=post&~method=plus",
 		requestContentType: "",
 		requestBody:        "a=1&b=2",
@@ -127,7 +127,7 @@ func TestSlimApi_Plus_post(t *testing.T) {
 }
 
 func TestSlimApi_Plus_json(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?plus",
 		requestContentType: "application/json",
 		requestBody:        `{"a":1,"b":"2"}`,
@@ -139,7 +139,7 @@ func TestSlimApi_Plus_json(t *testing.T) {
 }
 
 func TestSlimApi_Plus_panic(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?plus.post",
 		requestContentType: "",
 		requestBody:        "",
@@ -155,7 +155,7 @@ func TestSlimApi_Plus_panic(t *testing.T) {
 }
 
 func TestSlimApi_SumAndShowMap_get_route(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?S=1~2~3",
 		requestContentType: "",
 		requestBody:        "S=100", // Ignored.
@@ -167,7 +167,7 @@ func TestSlimApi_SumAndShowMap_get_route(t *testing.T) {
 }
 
 func TestSlimApi_SumAndShowMap_json(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?SumAndShowMap.json",
 		requestContentType: "",
 		requestBody:        `{ "S":[1,3], "M":{"A":1} }`, // map 是乱序的，所以 M 只能放一个字段，不然序列化后顺序错乱不好检验。
@@ -179,7 +179,7 @@ func TestSlimApi_SumAndShowMap_json(t *testing.T) {
 }
 
 func TestSlimApi_SumAndShowMap_decodeError(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?SumAndShowMap.json",
 		requestContentType: "",
 		requestBody:        `{ "M":1 }`,
@@ -195,7 +195,7 @@ func TestSlimApi_SumAndShowMap_decodeError(t *testing.T) {
 }
 
 func TestSlimApi_Time_json(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?Time",
 		requestContentType: "application/json",
 		requestBody:        `{ "T":"2022-01-15 18:22:59" }`,
@@ -207,7 +207,7 @@ func TestSlimApi_Time_json(t *testing.T) {
 }
 
 func TestSlimApi_ShowError_noError(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?ShowError&S=gg",
 		requestContentType: "",
 		requestBody:        "",
@@ -219,7 +219,7 @@ func TestSlimApi_ShowError_noError(t *testing.T) {
 }
 
 func TestSlimApi_ShowError_stringError(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?ShowError&S=gg&E=msg&Type=" + ShowError_StringError,
 		requestContentType: "",
 		requestBody:        "",
@@ -235,7 +235,7 @@ func TestSlimApi_ShowError_stringError(t *testing.T) {
 }
 
 func TestSlimApi_ShowError_bizError(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?ShowError&S=gg&E=msg&Type=" + ShowError_BizError999,
 		requestContentType: "",
 		requestBody:        "",
@@ -252,7 +252,7 @@ func TestSlimApi_ShowError_bizError(t *testing.T) {
 }
 
 func TestSlimApi_ShowError_panicString(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?ShowError&S=gg&E=msg&Type=" + ShowError_PanicString,
 		requestContentType: "",
 		requestBody:        "",
@@ -269,7 +269,7 @@ func TestSlimApi_ShowError_panicString(t *testing.T) {
 }
 
 func TestSlimApi_ShowError_panicBizError(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?ShowError&S=gg&E=msg&Type=" + ShowError_PanicBizError999,
 		requestContentType: "",
 		requestBody:        "",
@@ -286,7 +286,7 @@ func TestSlimApi_ShowError_panicBizError(t *testing.T) {
 }
 
 func TestSlimApi_CannotDecode(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?CannotDecode&c=",
 		requestContentType: "",
 		requestBody:        "",
@@ -303,7 +303,7 @@ func TestSlimApi_CannotDecode(t *testing.T) {
 }
 
 func TestSlimApi_CannotEncode(t *testing.T) {
-	DoIntergrationTest(t, intergrationTestArgs{
+	DoIntegrationTest(t, integrationTestArgs{
 		requestRelativeUrl: "?CannotEncode",
 		requestContentType: "",
 		requestBody:        "",
@@ -319,14 +319,14 @@ func TestSlimApi_CannotEncode(t *testing.T) {
 	})
 }
 
-func (intergrationTestMethodProvider) Empty() {}
+func (integrationTestMethodProvider) Empty() {}
 
 type PlusRequest struct {
 	A int
 	B *int
 }
 
-func (intergrationTestMethodProvider) Plus(args PlusRequest) *int {
+func (integrationTestMethodProvider) Plus(args PlusRequest) *int {
 	res := args.A + *args.B
 	return &res
 }
@@ -341,7 +341,7 @@ type SumAndShowMapResponse struct {
 	M   map[string]float32
 }
 
-func (intergrationTestMethodProvider) SumAndShowMap(args SumAndShowMapRequest) SumAndShowMapResponse {
+func (integrationTestMethodProvider) SumAndShowMap(args SumAndShowMapRequest) SumAndShowMapResponse {
 	var sum float32
 	for _, v := range args.S {
 		sum += v
@@ -352,7 +352,7 @@ func (intergrationTestMethodProvider) SumAndShowMap(args SumAndShowMapRequest) S
 	}
 }
 
-func (intergrationTestMethodProvider) Time(req struct{ T Time }) struct{ T Time } {
+func (integrationTestMethodProvider) Time(req struct{ T Time }) struct{ T Time } {
 	req.T = Time(req.T.Time().UTC())
 	return req
 }
@@ -371,7 +371,7 @@ type ShowErrorRequest struct {
 	S    string
 }
 
-func (intergrationTestMethodProvider) ShowError(args ShowErrorRequest) (s string, e error) {
+func (integrationTestMethodProvider) ShowError(args ShowErrorRequest) (s string, e error) {
 	switch args.Type {
 	case ShowError_StringError:
 		return args.S, errors.New(args.E)
@@ -390,17 +390,17 @@ type CannotDecodeRequest struct {
 	C chan int
 }
 
-func (intergrationTestMethodProvider) CannotDecode(args CannotDecodeRequest) {
+func (integrationTestMethodProvider) CannotDecode(args CannotDecodeRequest) {
 }
 
 type CannotEncodeResponse struct {
 	C chan int
 }
 
-func (intergrationTestMethodProvider) CannotEncode() CannotEncodeResponse {
+func (integrationTestMethodProvider) CannotEncode() CannotEncodeResponse {
 	return CannotEncodeResponse{}
 }
 
-func (intergrationTestMethodProvider) Panic(v interface{}) {
+func (integrationTestMethodProvider) Panic(v interface{}) {
 	panic(v)
 }
