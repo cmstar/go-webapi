@@ -16,6 +16,7 @@ var NoOpHandler webapi.ApiHandler = &webapi.ApiHandlerWrapper{}
 type NewStateSetup struct {
 	HttpMethod  string            // HTTP 请求的方法， GET/POST/PUT/DELETE 。若未给定值，默认为 GET 。
 	ContentType string            // 指定 HTTP Content-Type 头，若未给定值，则不会添加此字段。
+	Headers     map[string]string // 其他 HTTP 头。
 	BodyString  string            // 指定请求的 body ，优先级高于 BodyReader 。给定值时 BodyReader 被忽略。
 	BodyReader  io.Reader         // 指定请求的 body ，仅在 BodyString 为空时生效。
 	RouteParams map[string]string // 指定路由参数。若为 nil 或为空集则不会初始化路由参数。
@@ -32,6 +33,12 @@ func NewStateForTest(apiHandler webapi.ApiHandler, uri string, setup NewStateSet
 
 	if setup.ContentType != "" {
 		req.Header.Add(webapi.HttpHeaderContentType, setup.ContentType)
+	}
+
+	if setup.Headers != nil {
+		for k, v := range setup.Headers {
+			req.Header.Add(k, v)
+		}
 	}
 
 	if setup.BodyString != "" {
