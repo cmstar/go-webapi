@@ -26,7 +26,7 @@ func (d *slimApiNameResolver) FillMethod(state *webapi.ApiState) {
 	// 元参数可以多种方式体现（中括号内内容为可选），优先级自上而下：
 	// 形式1：http://domain/entry?~method=METHOD[&~format=FORMAT][&~callback=CALLBACK]
 	// 形式2：http://domain/entry?METHOD[.FORMAT][(CALLBACK)]
-	// 形式3使用路由：http://domain/entry/:~method/...[:~format]...[:~callback]
+	// 形式3使用路由：http://domain/entry/{~method}/...[{~format}]...[{~callback}]
 	req := state.RawRequest
 	query := state.Query
 
@@ -123,7 +123,6 @@ func (d *slimApiNameResolver) FillMethod(state *webapi.ApiState) {
 // 如果没有 FORMAT 部分，则格式为： METHOD(CALLBACK) 。
 //
 // 解析结果填入对应的指针参数；但若该参数已经有有效值（不为 nil 且不为空字符串），则原有值不会被覆盖。
-//
 func (*slimApiNameResolver) parseMixedMetaParams(input string, method, format, callback *string) {
 	const (
 		followByFormat = iota + 1
