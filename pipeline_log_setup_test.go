@@ -10,7 +10,7 @@ import (
 
 func TestLogFuncPipeline(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
-		p := NewLogFuncPipeline()
+		p := NewLogSetupPipeline()
 		p.Log(&ApiState{}) // Nothing happens.
 	})
 
@@ -25,7 +25,11 @@ func TestLogFuncPipeline(t *testing.T) {
 			state.LogMessage = append(state.LogMessage, "K3", "V3")
 		}
 
-		p := NewLogFuncPipeline(f1, f2)
+		p := NewLogSetupPipeline(
+			ToLogSetup(f1),
+			ToLogSetup(f2),
+		)
+
 		logger := logxtest.NewRecorder()
 		p.Log(&ApiState{Logger: logger})
 
@@ -40,7 +44,7 @@ func TestLogFuncPipeline(t *testing.T) {
 			state.LogMessage = append(state.LogMessage, "K", "V")
 		}
 
-		p := NewLogFuncPipeline(f1)
+		p := NewLogSetupPipeline(ToLogSetup(f1))
 		logger := logxtest.NewRecorder()
 		p.Log(&ApiState{Logger: logger})
 

@@ -1,5 +1,5 @@
-// Package logfunc 提供一组预定义的 [webapi.LogFunc] ，以便快速实现 [webapi.ApiLogger] 。
-package logfunc
+// Package logsetup 提供一组预定义的 [webapi.LogSetup] ，以便快速实现 [webapi.ApiLogger] 。
+package logsetup
 
 import (
 	"mime/multipart"
@@ -12,21 +12,45 @@ import (
 // IP 输出发起 HTTP 请求的客户端 IP 地址。
 //
 // 输出字段为： IP 。
-func IP(state *webapi.ApiState) {
+//
+// 这是一个单例。
+var IP = ip{}
+
+type ip struct{}
+
+var _ webapi.LogSetup = (*ip)(nil)
+
+func (ip) Setup(state *webapi.ApiState) {
 	state.LogMessage = append(state.LogMessage, "IP", state.UserHost)
 }
 
 // URL 输出请求的完整 URL 。
 //
 // 输出字段为： URL 。
-func URL(state *webapi.ApiState) {
+//
+// 这是一个单例。
+var URL = url{}
+
+type url struct{}
+
+var _ webapi.LogSetup = (*ip)(nil)
+
+func (url) Setup(state *webapi.ApiState) {
 	state.LogMessage = append(state.LogMessage, "URL", state.RawRequest.RequestURI)
 }
 
 // Error 根据当前的错误信息，判断错误的级别，并输出错误的描述信息。
 //
 // 输出字段为： ErrorType/Error 。
-func Error(state *webapi.ApiState) {
+//
+// 这是一个单例。
+var Error = err{}
+
+type err struct{}
+
+var _ webapi.LogSetup = (*err)(nil)
+
+func (err) Setup(state *webapi.ApiState) {
 	if state.Error == nil {
 		return
 	}
@@ -49,7 +73,15 @@ func Error(state *webapi.ApiState) {
 //   - ContentTypeX 文件的 Content-Type 。
 //
 // 不会输出非文件的部分。
-func Files(state *webapi.ApiState) {
+//
+// 这是一个单例。
+var Files = files{}
+
+type files struct{}
+
+var _ webapi.LogSetup = (*ip)(nil)
+
+func (files) Setup(state *webapi.ApiState) {
 	req := state.RawRequest
 	if req.MultipartForm == nil {
 		return

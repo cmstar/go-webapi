@@ -1,5 +1,4 @@
-// Package logfunc 提供一组预定义的 [webapi.LogFunc] ，以便快速实现 [webapi.ApiLogger] 。
-package logfunc
+package logsetup
 
 import (
 	"bytes"
@@ -20,7 +19,7 @@ func TestIP(t *testing.T) {
 	state := &webapi.ApiState{
 		UserHost: "value",
 	}
-	IP(state)
+	IP.Setup(state)
 
 	assert.Equal(t, logx.Level(0), state.LogLevel)
 	assert.Len(t, state.LogMessage, 2)
@@ -34,7 +33,7 @@ func TestURL(t *testing.T) {
 			RequestURI: "value",
 		},
 	}
-	URL(state)
+	URL.Setup(state)
 
 	assert.Equal(t, logx.Level(0), state.LogLevel)
 	assert.Len(t, state.LogMessage, 2)
@@ -45,7 +44,7 @@ func TestURL(t *testing.T) {
 func TestError(t *testing.T) {
 	t.Run("none", func(t *testing.T) {
 		state := &webapi.ApiState{}
-		Error(state)
+		Error.Setup(state)
 
 		assert.Equal(t, logx.Level(0), state.LogLevel)
 		assert.Len(t, state.LogMessage, 0)
@@ -55,7 +54,7 @@ func TestError(t *testing.T) {
 		state := &webapi.ApiState{
 			Error: errx.NewBizError(100, "msg", nil),
 		}
-		Error(state)
+		Error.Setup(state)
 
 		assert.Equal(t, logx.LevelWarn, state.LogLevel)
 		assert.Len(t, state.LogMessage, 4)
@@ -76,13 +75,13 @@ func TestFiles(t *testing.T) {
 			BodyReader:  buf,
 		})
 		state.RawRequest.ParseMultipartForm(maxMem)
-		Files(state)
+		Files.Setup(state)
 		return state
 	}
 
 	t.Run("empty", func(t *testing.T) {
 		state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, "/", webapitest.NewStateSetup{})
-		Files(state)
+		Files.Setup(state)
 		assert.Len(t, state.LogMessage, 0)
 	})
 
