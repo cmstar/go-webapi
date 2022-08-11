@@ -33,7 +33,12 @@ func TestDecodeFuncPipeline(t *testing.T) {
 		}
 		return true, nil, nil
 	}
-	decoder := NewDecodeFuncPipeline(decodeInt, decodeString, errorOnFloat64, nilOnFloat32)
+	decoder := NewArgumentDecoderPipeline(
+		ToArgumentDecoder(decodeInt),
+		ToArgumentDecoder(decodeString),
+		ToArgumentDecoder(errorOnFloat64),
+		ToArgumentDecoder(nilOnFloat32),
+	)
 
 	run := func(fn interface{}) *ApiState {
 		s := &ApiState{

@@ -12,19 +12,20 @@ import (
 )
 
 // NewSlimApiDecoder 返回用于 SlimAPI 协议的 [webapi.ApiDecoder] 实现。
-func NewSlimApiDecoder() webapi.DecodeFuncPipeline {
-	return webapi.NewDecodeFuncPipeline(StructArgDecodeFunc())
+func NewSlimApiDecoder() webapi.ArgumentDecoderPipeline {
+	return webapi.NewArgumentDecoderPipeline(StructArgumentDecoder)
 }
 
-// StructArgDecodeFunc 是一个 [webapi.DecodeFunc] ，
+// StructArgumentDecoder 是一个 [webapi.ArgumentDecoder] ，
 // 定义了 SlimAPI 协议的参数解析过程，用于方法参数表中 struct 类型的参数。
-func StructArgDecodeFunc() webapi.DecodeFunc {
-	return slimApiMethodStructArgDecoder{}.DecodeStruct
-}
+//
+// 这是一个单例。
+var StructArgumentDecoder = slimApiMethodStructArgDecoder{}
 
 type slimApiMethodStructArgDecoder struct{}
 
-func (d slimApiMethodStructArgDecoder) DecodeStruct(state *webapi.ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
+// DecodeArg implements [webapi.ApiDecoder.DecodeArg].
+func (d slimApiMethodStructArgDecoder) DecodeArg(state *webapi.ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
 	if argType.Kind() != reflect.Struct {
 		return false, nil, nil
 	}
