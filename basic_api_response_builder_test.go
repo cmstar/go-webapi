@@ -62,7 +62,7 @@ func Test_basicApiResponseBuilder_BuildResponse(t *testing.T) {
 		b.BuildResponse(state)
 		expect := ApiResponse[any]{
 			Code:    ErrorCodeBadRequest,
-			Message: "bad request",
+			Message: "x",
 			Data:    "d",
 		}
 		assert.Equal(t, expect, *state.Response)
@@ -84,7 +84,7 @@ func Test_basicApiResponseBuilder_BuildResponse(t *testing.T) {
 		b.BuildResponse(state)
 		expect := ApiResponse[any]{
 			Code:    ErrorCodeBadRequest,
-			Message: "bad request",
+			Message: "x",
 			Data:    "d",
 		}
 		assert.Equal(t, expect, *state.Response)

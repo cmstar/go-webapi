@@ -39,7 +39,7 @@ func (r *basicApiResponseBuilder) BuildResponse(state *ApiState) {
 	var badRequestErr BadRequestError
 	if errors.As(state.Error, &badRequestErr) {
 		resp.Code = ErrorCodeBadRequest
-		resp.Message = "bad request"
+		resp.Message = badRequestErr.Message
 		return
 	}
 

@@ -20,7 +20,6 @@ import (
 // CreateHandlerFunc() 返回一个函数，基于 ApiHandler 实现完整的处理过程。
 //
 // 其中 ApiNameResolver 、 ApiUserHostResolver 、 ApiDecoder 、 ApiMethodCaller
-//
 type ApiHandler interface {
 	ApiMethodRegister
 	ApiNameResolver
@@ -173,7 +172,6 @@ type ApiLogger interface {
 // logFinder 用于获取 Logger ，该 Logger 会赋值给 ApiState.Logger 。可为 nil 表示不记录日志。
 // 对于每个请求，其日志名称基于响应该请求的方法，由两部分构成，格式为“{ApiHandler.Name()}.{ApiMethod.Provider}.{ApiMethod.Name}”。
 // 如果未能检索到对应的方法，则日志名称为 ApiHandler.Name() 。
-//
 func CreateHandlerFunc(handler ApiHandler, logFinder logx.LogFinder) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		state := NewState(w, r, handler)
@@ -210,7 +208,7 @@ func handleRequest(state *ApiState, handler ApiHandler, logFinder logx.LogFinder
 
 	method, ok := handler.GetMethod(state.Name)
 	if !ok {
-		state.Error = CreateBadRequestError(state, nil, "method not found")
+		state.Error = CreateBadRequestError(state, errors.New("method not found"), "bad request")
 		if logFinder != nil {
 			state.Logger = logFinder.Find(handler.Name())
 		}
