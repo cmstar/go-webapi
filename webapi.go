@@ -19,11 +19,20 @@ import (
 // ApiHandler 定义了 WebAPI 处理过程中的抽象环节。
 // CreateHandlerFunc() 返回一个函数，基于 ApiHandler 实现完整的处理过程。
 //
-// 其中 ApiNameResolver 、 ApiUserHostResolver 、 ApiDecoder 、 ApiMethodCaller
+// 在响应请求时，各接口的执行顺序为：
+//   - ApiUserHostResolver
+//   - ApiNameResolver
+//   - ApiDecoder
+//   - ApiMethodCaller
+//   - ApiResponseBuilder
+//   - ApiResponseWriter
+//   - ApiLogger
+//
+// ApiMethodRegister 仅在注册阶段使用，在响应请求的过程中不会被调用。
 type ApiHandler interface {
 	ApiMethodRegister
-	ApiNameResolver
 	ApiUserHostResolver
+	ApiNameResolver
 	ApiDecoder
 	ApiMethodCaller
 	ApiResponseBuilder
