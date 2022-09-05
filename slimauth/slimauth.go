@@ -42,7 +42,7 @@ func SecretFinderFunc(f func(accessKey string) string) SecretFinder {
 }
 
 // NewSlimAuthApiHandler 创建 SlimAuth 协议的 [webapi.ApiHandler] 。
-func NewSlimAuthApiHandler(name string, finder SecretFinder) webapi.ApiHandler {
+func NewSlimAuthApiHandler(name string, finder SecretFinder) *webapi.ApiHandlerWrapper {
 	h := slimapi.NewSlimApiHandler(name)
 	h.ApiDecoder = NewSlimAuthApiDecoder(finder)
 	h.ApiResponseWriter = &slimAuthApiResponseWriter{h.ApiResponseWriter}
