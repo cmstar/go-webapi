@@ -44,7 +44,8 @@ func SecretFinderFunc(f func(accessKey string) string) SecretFinder {
 // NewSlimAuthApiHandler 创建 SlimAuth 协议的 [webapi.ApiHandler] 。
 func NewSlimAuthApiHandler(name string, finder SecretFinder) *webapi.ApiHandlerWrapper {
 	h := slimapi.NewSlimApiHandler(name)
-	h.ApiDecoder = NewSlimAuthApiDecoder(finder)
+	h.ApiNameResolver = NewSlimAuthApiNameResolver(finder)
+	h.ApiDecoder = NewSlimAuthApiDecoder()
 	h.ApiResponseWriter = &slimAuthApiResponseWriter{h.ApiResponseWriter}
 	return h
 }
@@ -63,7 +64,7 @@ func (x slimAuthApiResponseWriter) WriteResponse(state *webapi.ApiState) {
 }
 
 // 获取当前请求中缓存中的 [Authorization] 。若值不存在， panic 。
-// 在 [webapi.ApiDecoder.Decode] 发生后才可访问。
+// 在 [webapi.ApiNameResolver.FillMethod] 发生后才可访问。
 func GetBufferedAuthorization(state *webapi.ApiState) Authorization {
 	v, ok := state.GetCustomData(_authorizationArgumentKey)
 	if !ok {

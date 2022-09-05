@@ -105,7 +105,7 @@ func TestSlimAuthApiHandler_errors(t *testing.T) {
 
 	t.Run("NoMethod", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", s.URL, nil)
-		testRequest(t, r, `{"Code":400,"Message":"bad request","Data":null}`)
+		testRequest(t, r, `{"Code":400,"Message":"invalid Authorization","Data":null}`)
 	})
 
 	t.Run("InvalidAuth", func(t *testing.T) {
