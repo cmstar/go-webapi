@@ -90,7 +90,7 @@ func (x slimAuthApiDecoder) verifySignature(state *webapi.ApiState) {
 	}
 
 	if signResult.Sign != auth.Sign {
-		err = fmt.Errorf("sing mismatch, want %s, got %s", signResult.Sign, auth.Sign)
+		err = fmt.Errorf("signature mismatch, want %s, got %s", signResult.Sign, auth.Sign)
 		panic(webapi.CreateBadRequestError(state, err, "signature error"))
 	}
 
