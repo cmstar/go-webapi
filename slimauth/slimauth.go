@@ -47,6 +47,7 @@ func NewSlimAuthApiHandler(name string, finder SecretFinder) *webapi.ApiHandlerW
 	h.ApiNameResolver = NewSlimAuthApiNameResolver(finder)
 	h.ApiDecoder = NewSlimAuthApiDecoder()
 	h.ApiResponseWriter = &slimAuthApiResponseWriter{h.ApiResponseWriter}
+	h.ApiLogger = NewSlimAuthApiLogger()
 	return h
 }
 
@@ -63,14 +64,24 @@ func (x slimAuthApiResponseWriter) WriteResponse(state *webapi.ApiState) {
 	}
 }
 
-// 获取当前请求中缓存中的 [Authorization] 。若值不存在， panic 。
-// 在 [webapi.ApiNameResolver.FillMethod] 发生后才可访问。
-func GetBufferedAuthorization(state *webapi.ApiState) Authorization {
-	v, ok := state.GetCustomData(_authorizationArgumentKey)
+// 获取当前请求中缓存的 [Authorization] 。若值不存在， panic 。
+// 在 [webapi.ApiNameResolver.FillMethod] 发生后，被解析到的 [Authorization] 将被缓存。
+func MustGetBufferedAuthorization(state *webapi.ApiState) Authorization {
+	v, ok := GetBufferedAuthorization(state)
 	if !ok {
 		webapi.PanicApiError(state, nil, "Authorization not set, there may be a bug.")
 	}
-	return v.(Authorization)
+	return v
+}
+
+// 获取当前请求中缓存的 [Authorization] 。若值不存在，返回默认值及 ok=false 。
+// 在 [webapi.ApiNameResolver.FillMethod] 发生后，被解析到的 [Authorization] 将被缓存。
+func GetBufferedAuthorization(state *webapi.ApiState) (auth Authorization, ok bool) {
+	v, ok := state.GetCustomData(_authorizationArgumentKey)
+	if !ok {
+		return Authorization{}, false
+	}
+	return v.(Authorization), true
 }
 
 // 缓存解析到的 [Authorization] 。

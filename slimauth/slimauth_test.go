@@ -87,7 +87,7 @@ func newTestServer(secretFinder SecretFinder) *httptest.Server {
 	handler := NewSlimAuthApiHandler("", secretFinder)
 	handler.RegisterMethods(methodProvider{})
 
-	logger := logx.NewStdLogger(nil)
+	logger := logx.NopLogger
 	handlerFunc := webapi.CreateHandlerFunc(handler, logx.NewSingleLoggerLogFinder(logger))
 	ts := httptest.NewServer(http.HandlerFunc(handlerFunc))
 	return ts

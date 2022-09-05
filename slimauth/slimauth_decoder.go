@@ -28,7 +28,7 @@ func (x authorizationArgumentDecoder) DecodeArg(state *webapi.ApiState, index in
 		return
 	}
 
-	v = GetBufferedAuthorization(state)
+	v = MustGetBufferedAuthorization(state)
 	ok = true
 
 	if isPtr {
