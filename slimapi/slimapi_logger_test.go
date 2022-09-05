@@ -17,7 +17,7 @@ import (
 )
 
 func Test_slimApiLogger_Log(t *testing.T) {
-	logger := NewSlimApiApiLogger()
+	logger := NewSlimApiLogger()
 
 	type stateArgs struct {
 		url      string

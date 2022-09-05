@@ -18,7 +18,7 @@ func Test_slimApiResponseWriter_WriteResponse(t *testing.T) {
 		wantPanicPattern string
 	}
 
-	instance := NewSlimApiApiResponseWriter()
+	instance := NewSlimApiResponseWriter()
 	testOne := func(name string, a args) {
 		t.Run(name, func(t *testing.T) {
 			if a.wantPanicPattern != "" {

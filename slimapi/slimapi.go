@@ -63,8 +63,8 @@ func NewSlimApiHandler(name string) *webapi.ApiHandlerWrapper {
 		ApiResponseBuilder:  webapi.NewBasicApiResponseBuilder(),
 		ApiMethodRegister:   webapi.NewBasicApiMethodRegister(),
 		ApiUserHostResolver: webapi.NewBasicApiUserHostResolver(),
-		ApiResponseWriter:   NewSlimApiApiResponseWriter(),
-		ApiLogger:           NewSlimApiApiLogger(),
+		ApiResponseWriter:   NewSlimApiResponseWriter(),
+		ApiLogger:           NewSlimApiLogger(),
 	}
 }
 

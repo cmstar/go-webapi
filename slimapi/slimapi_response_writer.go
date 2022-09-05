@@ -11,9 +11,9 @@ import (
 type slimApiResponseWriter struct {
 }
 
-// NewSlimApiApiResponseWriter 返回用于 SlimAPI 协议的 webapi.ApiResponseWriter 实现。
+// NewSlimApiResponseWriter 返回用于 SlimAPI 协议的 webapi.ApiResponseWriter 实现。
 // 该实现是无状态且线程安全的。
-func NewSlimApiApiResponseWriter() webapi.ApiResponseWriter {
+func NewSlimApiResponseWriter() webapi.ApiResponseWriter {
 	return &slimApiResponseWriter{}
 }
 
