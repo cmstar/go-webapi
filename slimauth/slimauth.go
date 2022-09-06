@@ -20,40 +20,35 @@ const (
 	_authorizationArgumentKey = "slimauthAuthorizationData"
 )
 
-// SecretFinder 用于获取绑定到指定 accessKey 的 secret 。
-type SecretFinder interface {
-	// GetSecret 获取绑定到指定 accessKey 的 secret 。
-	// 若给定的 accessKey 没有绑定，返回空字符串。
-	// 若获取过程出错，直接 panic 。
-	GetSecret(accessKey string) string
-}
+// SecretFinderFunc 用于获取绑定到指定 accessKey 的 secret 。
+// 若给定的 accessKey 没有绑定，返回空字符串。
+// 若获取过程出错，直接 panic ，其错误处理方式与普通的 API 方法一致。
+type SecretFinderFunc func(accessKey string) string
 
-type secretFinderWrapper struct {
-	f func(accessKey string) string
-}
-
-func (x secretFinderWrapper) GetSecret(accessKey string) string {
-	return x.f(accessKey)
-}
-
-// SecretFinderFunc 将给定的函数包装为 [SecretFinder] 。
-func SecretFinderFunc(f func(accessKey string) string) SecretFinder {
-	return secretFinderWrapper{f}
+// SlimAuthApiHandlerOption 用于初始化 SlimAuth 协议的 [webapi.ApiHandler] 。
+type SlimAuthApiHandlerOption struct {
+	Name         string           // 名称。
+	SecretFinder SecretFinderFunc // 用于查找签名所需的 secret 。
 }
 
 // NewSlimAuthApiHandler 创建 SlimAuth 协议的 [webapi.ApiHandler] 。
-func NewSlimAuthApiHandler(name string, finder SecretFinder) *webapi.ApiHandlerWrapper {
-	h := slimapi.NewSlimApiHandler(name)
-	h.ApiNameResolver = NewSlimAuthApiNameResolver(finder)
+func NewSlimAuthApiHandler(op SlimAuthApiHandlerOption) *webapi.ApiHandlerWrapper {
+	h := slimapi.NewSlimApiHandler(op.Name)
+	h.ApiNameResolver = NewSlimAuthApiNameResolver(op.SecretFinder)
 	h.ApiDecoder = NewSlimAuthApiDecoder()
-	h.ApiResponseWriter = &slimAuthApiResponseWriter{h.ApiResponseWriter}
+	h.ApiResponseWriter = NewSlimAuthApiResponseWriter()
 	h.ApiLogger = NewSlimAuthApiLogger()
 	return h
 }
 
-// SlimAuth 协议的 ApiResponseWriter 。除了将 Code 介于1-999时将其作为 HTTP 状态码返回，其余都和 SlimAPI 一样。
 type slimAuthApiResponseWriter struct {
 	raw webapi.ApiResponseWriter
+}
+
+// NewSlimAuthApiResponseWriter 返回用于 SlimAuth 协议的 [webapi.ApiResponseWriter] 。
+// 除了将 Code 介于1-999时将其作为 HTTP 状态码返回，其余都和 SlimAPI 一样。
+func NewSlimAuthApiResponseWriter() webapi.ApiResponseWriter {
+	return &slimAuthApiResponseWriter{slimapi.NewSlimApiResponseWriter()}
 }
 
 func (x slimAuthApiResponseWriter) WriteResponse(state *webapi.ApiState) {

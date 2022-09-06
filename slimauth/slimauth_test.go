@@ -61,18 +61,6 @@ func newRequest(baseUrl, pathAndQuery string, typ int, body string) *http.Reques
 	return r
 }
 
-func newFinder() SecretFinder {
-	return SecretFinderFunc(func(accessKey string) string {
-		switch accessKey {
-		case "key":
-			return _secret
-
-		default:
-			return ""
-		}
-	})
-}
-
 type methodProvider struct{}
 
 func (methodProvider) Plus(req struct{ X, Y int }) int {
@@ -83,8 +71,18 @@ func (methodProvider) GetKey(auth *Authorization) string {
 	return auth.Key
 }
 
-func newTestServer(secretFinder SecretFinder) *httptest.Server {
-	handler := NewSlimAuthApiHandler("", secretFinder)
+func newTestServer() *httptest.Server {
+	handler := NewSlimAuthApiHandler(SlimAuthApiHandlerOption{
+		SecretFinder: func(accessKey string) string {
+			switch accessKey {
+			case "key":
+				return _secret
+
+			default:
+				return ""
+			}
+		},
+	})
 	handler.RegisterMethods(methodProvider{})
 
 	logger := logx.NopLogger
@@ -101,7 +99,7 @@ func testRequest(t *testing.T, r *http.Request, want string) {
 }
 
 func TestSlimAuthApiHandler_errors(t *testing.T) {
-	s := newTestServer(newFinder())
+	s := newTestServer()
 
 	t.Run("NoMethod", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", s.URL, nil)
@@ -164,7 +162,7 @@ func TestSlimAuthApiHandler_errors(t *testing.T) {
 	})
 }
 func TestSlimAuthApiHandler_ok(t *testing.T) {
-	s := newTestServer(newFinder())
+	s := newTestServer()
 
 	t.Run("PlusViaForm", func(t *testing.T) {
 		auth := BuildAuthorizationHeader(Authorization{

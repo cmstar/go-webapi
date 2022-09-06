@@ -8,19 +8,20 @@ import (
 )
 
 type slimAuthApiNameResolver struct {
-	finder SecretFinder
-	raw    webapi.ApiNameResolver
+	secretFinder SecretFinderFunc
+	raw          webapi.ApiNameResolver
 }
 
-// NewSlimAuthApiNameResolver 返回 SlimAuth 协议的 [webapi.ApiNameResolver] 。它增加了签名校验，其余都和 SlimAPI 一样。
-func NewSlimAuthApiNameResolver(finder SecretFinder) webapi.ApiNameResolver {
-	if finder == nil {
+// NewSlimAuthApiNameResolver 返回 SlimAuth 协议的 [webapi.ApiNameResolver] 。
+// 它增加了签名校验，其余都和 SlimAPI 一样。
+func NewSlimAuthApiNameResolver(secretFinder SecretFinderFunc) webapi.ApiNameResolver {
+	if secretFinder == nil {
 		panic("finder must be provided")
 	}
 
 	return &slimAuthApiNameResolver{
-		finder: finder,
-		raw:    slimapi.NewSlimApiNameResolver(),
+		secretFinder: secretFinder,
+		raw:          slimapi.NewSlimApiNameResolver(),
 	}
 }
 
@@ -40,12 +41,12 @@ func (x slimAuthApiNameResolver) verifySignature(state *webapi.ApiState) {
 	// 存起来，用于后续方法参数的赋值和日志输出。
 	SetBufferedAuthorization(state, auth)
 
-	// 签名算吧目前就一个版本，不允许出现其他值。
+	// 签名算法目前就一个版本，不允许出现其他值。
 	if auth.Version != DefaultSignVersion {
 		panic(webapi.CreateBadRequestError(state, err, "unsupported signature version"))
 	}
 
-	secret := x.finder.GetSecret(auth.Key)
+	secret := x.secretFinder(auth.Key)
 	if secret == "" {
 		panic(webapi.CreateBadRequestError(state, nil, "unknown key"))
 	}
