@@ -56,7 +56,7 @@ var slimApiConv = conv.Conv{
 func NewSlimApiHandler(name string) *webapi.ApiHandlerWrapper {
 	return &webapi.ApiHandlerWrapper{
 		HandlerName:         name,
-		HttpMethods:         []string{"GET", "POST"},
+		HttpMethods:         SupportedHttpMethods(),
 		ApiNameResolver:     NewSlimApiNameResolver(),
 		ApiDecoder:          NewSlimApiDecoder(),
 		ApiMethodCaller:     webapi.NewBasicApiMethodCaller(),
@@ -66,6 +66,12 @@ func NewSlimApiHandler(name string) *webapi.ApiHandlerWrapper {
 		ApiResponseWriter:   NewSlimApiResponseWriter(),
 		ApiLogger:           NewSlimApiLogger(),
 	}
+}
+
+// SupportedHttpMethods 返回 SlimAPI 支持的 HTTP 请求方法。
+// 当前支持 GET 和 POST 。
+func SupportedHttpMethods() []string {
+	return []string{"GET", "POST"}
 }
 
 func setRequestFormat(state *webapi.ApiState, v string) {
