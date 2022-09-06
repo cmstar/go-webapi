@@ -7,6 +7,8 @@
 
 这是[SlimWebApi](https://github.com/cmstar/SlimWebApi)的 Go 版。 SlimAPI 通信协议详见[godoc-SlimAPI通信协议](https://pkg.go.dev/github.com/cmstar/go-webapi/slimapi#pkg-overview)。
 
+同时，基于 SlimAPI ，提供一套带有签名校验逻辑的扩展 [SlimAuth](https://pkg.go.dev/github.com/cmstar/go-webapi/slimauth#pkg-overview)。
+
 ## 快速使用
 
 安装：
