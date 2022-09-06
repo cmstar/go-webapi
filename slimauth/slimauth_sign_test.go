@@ -86,7 +86,7 @@ func TestParseAuthorizationHeader(t *testing.T) {
 
 		assert.Equal(t, "kk", auth.Key)
 		assert.Equal(t, "ss", auth.Sign)
-		assert.Equal(t, 1661843240, auth.Timestamp)
+		assert.Equal(t, int64(1661843240), auth.Timestamp)
 		assert.Equal(t, 123, auth.Version)
 	})
 

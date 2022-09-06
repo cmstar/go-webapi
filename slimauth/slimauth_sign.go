@@ -22,7 +22,7 @@ import (
 type Authorization struct {
 	Key       string // 请求方的标识。
 	Sign      string // 签名。
-	Timestamp int    // 生成签名时的 UNIX 时间戳，单位是秒。
+	Timestamp int64  // 生成签名时的 UNIX 时间戳，单位是秒。
 	Version   int    // 算法版本。在 Authorization 头未给出时，默认为 [DEFAULT_AUTHORIZATION_VERSION] 。
 }
 
@@ -39,7 +39,7 @@ func BuildAuthorizationHeader(auth Authorization) string {
 	b.WriteString(auth.Sign)
 
 	b.WriteString(", Timestamp=")
-	b.WriteString(strconv.Itoa(auth.Timestamp))
+	b.WriteString(strconv.FormatInt(auth.Timestamp, 10))
 
 	if auth.Version != 0 {
 		b.WriteString(", Version=")
@@ -109,7 +109,7 @@ func ParseAuthorizationHeader(r *http.Request) (Authorization, error) {
 			hasVersion = true
 
 		case "Timestamp":
-			v, err := strconv.Atoi(kv[1])
+			v, err := strconv.ParseInt(kv[1], 10, 64)
 			if err != nil {
 				return auth, fmt.Errorf("Authorization timestamp error: %w", err)
 			}
@@ -155,7 +155,7 @@ const (
 //   - accessKey 对应 Authorization 头中的 Key 字段的值。
 //   - secret HMAC-SHA256 的密钥，使用 UTF-8 字符集。
 //   - timestamp UNIX 时间戳，对应 Authorization 头的 Timestamp 字段的值。
-func AppendSign(r *http.Request, accessKey, secret string, timestamp int) SignResult {
+func AppendSign(r *http.Request, accessKey, secret string, timestamp int64) SignResult {
 	// 追加 Authorization 头的请求基本上是用来发送的，而不是服务器接收到的。
 	// 这种情况下 HTTP body 需要是可用的，故总是设置参数 rewind=true 。
 	res := Sign(r, true, secret, timestamp)
@@ -181,7 +181,7 @@ func AppendSign(r *http.Request, accessKey, secret string, timestamp int) SignRe
 //     此设置在表单请求下不会生效，表单解析后应通过 [http.Request.Form]/[http.Request.PostForm] 访问。
 //   - secret HMAC-SHA256 的密钥，使用 UTF-8 字符集。
 //   - timestamp UNIX 时间戳，对应 Authorization 头的 Timestamp 字段的值。
-func Sign(r *http.Request, rewindBody bool, secret string, timestamp int) SignResult {
+func Sign(r *http.Request, rewindBody bool, secret string, timestamp int64) SignResult {
 	data, typ, err := buildDataToSign(r, rewindBody, timestamp)
 	if typ != SignResultType_OK {
 		return SignResult{
@@ -203,11 +203,11 @@ func Sign(r *http.Request, rewindBody bool, secret string, timestamp int) SignRe
 //   - QUERY 是 URL 的参数表，按参数名称字典顺序升序，然后将值部分紧密拼接起来（无分隔符）。没有参数时，使用一个空字符串。
 //   - BODY 若是表单类型，则处理方式同 QUERY ；若是 JSON 请求，则为 JSON 原文。 GET 请求时此部分省略（包含换行符）。
 //   - 最后一行固定是“END”。
-func buildDataToSign(r *http.Request, rewindBody bool, timestamp int) ([]byte, SignResultType, error) {
+func buildDataToSign(r *http.Request, rewindBody bool, timestamp int64) ([]byte, SignResultType, error) {
 	buf := new(bytes.Buffer)
 
 	// TIMESTAMP
-	buf.WriteString(strconv.Itoa(timestamp))
+	buf.WriteString(strconv.FormatInt(timestamp, 10))
 	buf.WriteRune('\n')
 
 	// METHOD
