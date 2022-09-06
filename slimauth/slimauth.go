@@ -1,4 +1,3 @@
-// slimauth 是带有签名校验逻辑的 SlimAPI 协议的扩展。
 package slimauth
 
 import (
