@@ -47,27 +47,8 @@ func NewSlimAuthApiHandler(op SlimAuthApiHandlerOption) *webapi.ApiHandlerWrappe
 	h := slimapi.NewSlimApiHandler(op.Name)
 	h.ApiNameResolver = NewSlimAuthApiNameResolver(op.SecretFinder, timeChecker)
 	h.ApiDecoder = NewSlimAuthApiDecoder()
-	h.ApiResponseWriter = NewSlimAuthApiResponseWriter()
 	h.ApiLogger = NewSlimAuthApiLogger()
 	return h
-}
-
-type slimAuthApiResponseWriter struct {
-	raw webapi.ApiResponseWriter
-}
-
-// NewSlimAuthApiResponseWriter 返回用于 SlimAuth 协议的 [webapi.ApiResponseWriter] 。
-// 除了将 Code 介于1-999时将其作为 HTTP 状态码返回，其余都和 SlimAPI 一样。
-func NewSlimAuthApiResponseWriter() webapi.ApiResponseWriter {
-	return &slimAuthApiResponseWriter{slimapi.NewSlimApiResponseWriter()}
-}
-
-func (x slimAuthApiResponseWriter) WriteResponse(state *webapi.ApiState) {
-	x.raw.WriteResponse(state)
-
-	if state.Response.Code > 0 && state.Response.Code < 1000 {
-		state.RawResponse.WriteHeader(state.Response.Code)
-	}
 }
 
 // 获取当前请求中缓存的 [Authorization] 。若值不存在， panic 。
