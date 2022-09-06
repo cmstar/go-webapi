@@ -7,10 +7,12 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cmstar/go-logx"
 	"github.com/cmstar/go-webapi"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -18,10 +20,13 @@ const (
 	_requestTypeForm = 1
 	_requestTypeJson = 2
 
-	// 固定用此时间戳测试，一遍获得稳定可断言的 hash 。
+	// 没有时间戳校验时，固定用此时间戳测试，以便获得稳定可断言的 hash 。
 	_timestamp = 1661934251
 
-	// 测试统一用这个密钥。
+	// 测试时表示合法的 access-key 。
+	_key = "key"
+
+	// 当 access-key 为 key 时，返回这个密钥。
 	_secret = "secret"
 )
 
@@ -71,17 +76,18 @@ func (methodProvider) GetKey(auth *Authorization) string {
 	return auth.Key
 }
 
-func newTestServer() *httptest.Server {
+func newTestServer(timeChecker TimeCheckerFunc) *httptest.Server {
 	handler := NewSlimAuthApiHandler(SlimAuthApiHandlerOption{
 		SecretFinder: func(accessKey string) string {
 			switch accessKey {
-			case "key":
+			case _key:
 				return _secret
 
 			default:
 				return ""
 			}
 		},
+		TimeChecker: timeChecker,
 	})
 	handler.RegisterMethods(methodProvider{})
 
@@ -98,8 +104,9 @@ func testRequest(t *testing.T, r *http.Request, want string) {
 	assert.Equal(t, want, string(body))
 }
 
+// 测试不包含时间戳校验的其他错误。
 func TestSlimAuthApiHandler_errors(t *testing.T) {
-	s := newTestServer()
+	s := newTestServer(NoTimeChecker)
 
 	t.Run("NoMethod", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", s.URL, nil)
@@ -150,7 +157,7 @@ func TestSlimAuthApiHandler_errors(t *testing.T) {
 
 	t.Run("BadSign", func(t *testing.T) {
 		auth := BuildAuthorizationHeader(Authorization{
-			Key:       "key",
+			Key:       _key,
 			Sign:      "bad",
 			Timestamp: _timestamp,
 		})
@@ -161,12 +168,38 @@ func TestSlimAuthApiHandler_errors(t *testing.T) {
 		testRequest(t, r, `{"Code":400,"Message":"signature error","Data":null}`)
 	})
 }
+
+// 测试时间戳校验。
+func TestSlimAuthApiHandler_timeChecker(t *testing.T) {
+	t.Run("OK", func(t *testing.T) {
+		s := newTestServer(nil) // 自动使用 DefaultTimeChecker 。
+
+		r, _ := http.NewRequest("GET", s.URL+"?Plus&x=1", nil)
+		signResult := AppendSign(r, _key, _secret, time.Now().Unix())
+		require.Equal(t, SignResultType_OK, signResult.Type)
+
+		testRequest(t, r, `{"Code":0,"Message":"","Data":1}`)
+	})
+
+	t.Run("TimestampError", func(t *testing.T) {
+		s := newTestServer(DefaultTimeChecker)
+
+		timestamp := time.Now().Unix() + 1000
+
+		r, _ := http.NewRequest("GET", s.URL+"?Plus&x=1", nil)
+		signResult := AppendSign(r, _key, _secret, timestamp)
+		require.Equal(t, SignResultType_OK, signResult.Type)
+
+		testRequest(t, r, `{"Code":400,"Message":"timestamp error","Data":null}`)
+	})
+}
+
 func TestSlimAuthApiHandler_ok(t *testing.T) {
-	s := newTestServer()
+	s := newTestServer(NoTimeChecker)
 
 	t.Run("PlusViaForm", func(t *testing.T) {
 		auth := BuildAuthorizationHeader(Authorization{
-			Key:       "key",
+			Key:       _key,
 			Sign:      "66d4960c8b453050db7477c5c81afc366a95a98bcbffaad8d8732aacc812ed2b",
 			Timestamp: _timestamp,
 		})
@@ -180,7 +213,7 @@ func TestSlimAuthApiHandler_ok(t *testing.T) {
 
 	t.Run("GetKey", func(t *testing.T) {
 		auth := BuildAuthorizationHeader(Authorization{
-			Key:       "key",
+			Key:       _key,
 			Sign:      "4137ecfe066394f7c46e171a0def0b831d9d27971ff1e15825e2294624f44b37",
 			Timestamp: _timestamp,
 		})

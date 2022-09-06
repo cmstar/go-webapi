@@ -27,14 +27,26 @@ type SecretFinderFunc func(accessKey string) string
 
 // SlimAuthApiHandlerOption 用于初始化 SlimAuth 协议的 [webapi.ApiHandler] 。
 type SlimAuthApiHandlerOption struct {
-	Name         string           // 名称。
-	SecretFinder SecretFinderFunc // 用于查找签名所需的 secret 。
+	// 名称。
+	Name string
+
+	// 用于查找签名所需的 secret 。必须提供。
+	SecretFinder SecretFinderFunc
+
+	// 用于校验签名信息中携带的时间戳的有效性。
+	// 若为 nil ，将自动使用 [DefaultTimeChecker] ；若不需要校验，可给定 [NoTimeChecker] 。
+	TimeChecker TimeCheckerFunc
 }
 
 // NewSlimAuthApiHandler 创建 SlimAuth 协议的 [webapi.ApiHandler] 。
 func NewSlimAuthApiHandler(op SlimAuthApiHandlerOption) *webapi.ApiHandlerWrapper {
+	timeChecker := op.TimeChecker
+	if timeChecker == nil {
+		timeChecker = DefaultTimeChecker
+	}
+
 	h := slimapi.NewSlimApiHandler(op.Name)
-	h.ApiNameResolver = NewSlimAuthApiNameResolver(op.SecretFinder)
+	h.ApiNameResolver = NewSlimAuthApiNameResolver(op.SecretFinder, timeChecker)
 	h.ApiDecoder = NewSlimAuthApiDecoder()
 	h.ApiResponseWriter = NewSlimAuthApiResponseWriter()
 	h.ApiLogger = NewSlimAuthApiLogger()

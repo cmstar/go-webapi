@@ -9,18 +9,24 @@ import (
 
 type slimAuthApiNameResolver struct {
 	secretFinder SecretFinderFunc
+	timeChecker  TimeCheckerFunc
 	raw          webapi.ApiNameResolver
 }
 
 // NewSlimAuthApiNameResolver 返回 SlimAuth 协议的 [webapi.ApiNameResolver] 。
 // 它增加了签名校验，其余都和 SlimAPI 一样。
-func NewSlimAuthApiNameResolver(secretFinder SecretFinderFunc) webapi.ApiNameResolver {
+func NewSlimAuthApiNameResolver(secretFinder SecretFinderFunc, timeChecker TimeCheckerFunc) webapi.ApiNameResolver {
 	if secretFinder == nil {
-		panic("finder must be provided")
+		panic("secretFinder must be provided")
+	}
+
+	if timeChecker == nil {
+		panic("timeChecker must be provided")
 	}
 
 	return &slimAuthApiNameResolver{
 		secretFinder: secretFinder,
+		timeChecker:  timeChecker,
 		raw:          slimapi.NewSlimApiNameResolver(),
 	}
 }
@@ -53,6 +59,12 @@ func (x slimAuthApiNameResolver) verifySignature(state *webapi.ApiState) {
 
 	// 后续走 SlimAPI 的 decode 过程，需要重读 body 。
 	signResult := Sign(r, true, secret, auth.Timestamp)
+
+	// 时间戳校验。
+	timeCheckErr := x.timeChecker(auth.Timestamp)
+	if timeCheckErr != nil {
+		panic(webapi.CreateBadRequestError(state, timeCheckErr, "timestamp error"))
+	}
 
 	switch signResult.Type {
 	case SignResultType_MissingContentType:
