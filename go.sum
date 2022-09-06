@@ -1,7 +1,7 @@
 github.com/cmstar/go-conv v0.4.1 h1:Uf0L4lUWqQ3WcffNO2/aSEAR2PrluyGArGDwfLUN6Xg=
 github.com/cmstar/go-conv v0.4.1/go.mod h1:vc836gwYz4cI2oCWdL/EF514eEjTDpXmTBvfZEELdXs=
-github.com/cmstar/go-errx v1.4.2 h1:Vc5iIOE4yxvMYl07C2UOyZ2oM8AHROnIJPlDVVTVVdY=
-github.com/cmstar/go-errx v1.4.2/go.mod h1:q9VjJpK9+y2r533Ud7hp+LsY2IjqkaC0XQ/ZTrG5vFI=
+github.com/cmstar/go-errx v1.4.3 h1:pvoqiff2b67G05IyZkf9WI9Z3IqbmqrLTXlygejyz9A=
+github.com/cmstar/go-errx v1.4.3/go.mod h1:q9VjJpK9+y2r533Ud7hp+LsY2IjqkaC0XQ/ZTrG5vFI=
 github.com/cmstar/go-logx v1.3.0 h1:O7OfagWXPqj6AY6yCE1Y2qkNa0elDW+zvwmCW8mmij4=
 github.com/cmstar/go-logx v1.3.0/go.mod h1:0A7mOSEe/HJ6yBqky2M17Bfto5uLF5gPFqtIrOH3bLc=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

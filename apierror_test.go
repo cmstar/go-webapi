@@ -80,7 +80,7 @@ func TestDescribeError(t *testing.T) {
 			errx.Wrap("pre", errors.New("e")),
 			logx.LevelError,
 			"ErrorWrapper",
-			[]string{`^pre: e\n--- `, `\n=== e$`},
+			[]string{`^pre: e\n--- `, `\n=== e\n$`},
 		},
 
 		{
@@ -88,7 +88,7 @@ func TestDescribeError(t *testing.T) {
 			CreateBadRequestError(nil, errors.New("e"), "bad %v", "request"),
 			logx.LevelError,
 			"BadRequestError",
-			[]string{`^bad request\n=== e$`},
+			[]string{`^bad request\n=== e\n$`},
 		},
 
 		{

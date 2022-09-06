@@ -263,7 +263,7 @@ func TestSlimApi_ShowError_panicString(t *testing.T) {
 		wantLogPattern: map[string]string{
 			"level":     "ERROR",
 			"ErrorType": "ErrorWrapper",
-			"Error":     `(?s)^ShowError: msg\n--- \[.+=== msg$`,
+			"Error":     `(?s)^ShowError: msg\n--- \[.+=== msg\n$`,
 		},
 	})
 }
