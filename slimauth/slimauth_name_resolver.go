@@ -73,8 +73,8 @@ func (x slimAuthApiNameResolver) verifySignature(state *webapi.ApiState) {
 	case SignResultType_UnsupportedContentType:
 		panic(webapi.CreateBadRequestError(state, signResult.Cause, "unsupported Content-Type"))
 
-	case SignResultType_InvalidFormData:
-		panic(webapi.CreateBadRequestError(state, signResult.Cause, "invalid form data"))
+	case SignResultType_InvalidRequestBody:
+		panic(webapi.CreateBadRequestError(state, signResult.Cause, "invalid request body"))
 	}
 
 	if signResult.Sign != auth.Sign {

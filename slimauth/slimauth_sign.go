@@ -146,7 +146,7 @@ const (
 	SignResultType_OK                     SignResultType = iota // 签名成功。
 	SignResultType_MissingContentType                           // 当 POST 请求缺少 Content-Type 头时给定此错误。
 	SignResultType_UnsupportedContentType                       // 当有 POST 请求有 Content-Type 头，但类型不受支持时给定此错误。
-	SignResultType_InvalidFormData                              // 表单请求的表单数据格式缺失或不正确。
+	SignResultType_InvalidRequestBody                           // 请求的 body 部分缺失或格式错误。
 )
 
 // AppendSign 计算请求的签名，并将其赋值到请求的 Authorization 头。
@@ -199,8 +199,15 @@ func Sign(r *http.Request, rewindBody bool, secret string, timestamp int64) Sign
 // 构建用于签名的串，各部分末尾带一个换行符（ \n ）分割，依次为：
 //   - TIMESTAMP UNIX 时间戳，需和 Authorization 头里的一样。
 //   - METHOD 是 HTTP 请求的 METHOD ，如 GET/POST 。
-//   - PATH 请求的路径，包含开头的 / ，比如请求地址是 http://temp.org/the/path/ 则路径为 /the/path/ ；如果没有路径部分，使用 / 。
-//   - QUERY 是 URL 的参数表，按参数名称字典顺序升序，然后将值部分紧密拼接起来（无分隔符）。没有参数时，使用一个空字符串。
+//   - PATH 请求的路径，没有路径部分是，使用“/”。
+//     比如请求地址是“http://temp.org/the/path/”则路径为“/the/path/”；
+//     地址是“http://temp.org/”或“http://temp.org”，路径均为“/”。
+//   - QUERY 是 URL 的 query string 部分拼接后的值。
+//     先按参数名称的 UTF-8 字节顺序升序，将参数排列好，需使用稳定的排序算法，这样若有同名参数，其顺序不会被打乱；
+//     然后排序后的参数的值紧密拼接起来（无分隔符）；
+//     若一个参数没有值，如“?a=&b=2”或“?a&b=2”中的“a”，则用参数名称代替值拼入。
+//     没有 query string 时，整个 QUERY 部分使用一个空字符串。
+//     注意字节顺序不是字典顺序，比如在字节顺序下，英文大写字母在小写字母前面。
 //   - BODY 若是表单类型，则处理方式同 QUERY ；若是 JSON 请求，则为 JSON 原文。 GET 请求时此部分省略（包含换行符）。
 //   - 最后一行固定是“END”。
 func buildDataToSign(r *http.Request, rewindBody bool, timestamp int64) ([]byte, SignResultType, error) {
@@ -237,11 +244,16 @@ func buildDataToSign(r *http.Request, rewindBody bool, timestamp int64) ([]byte,
 		case webapi.ContentTypeForm:
 			err := r.ParseForm()
 			if err != nil {
-				return nil, SignResultType_InvalidFormData, err
+				return nil, SignResultType_InvalidRequestBody, err
 			}
 			appendQueryWithNewLine(buf, r.PostForm)
 
 		case webapi.ContentTypeJson:
+			if r.Body == nil {
+				err := fmt.Errorf("missing body for %s", contentType[0])
+				return nil, SignResultType_InvalidRequestBody, err
+			}
+
 			if rewindBody {
 				data, err := repeatableReadBody(r)
 				if err != nil {
@@ -265,16 +277,20 @@ func buildDataToSign(r *http.Request, rewindBody bool, timestamp int64) ([]byte,
 	return buf.Bytes(), SignResultType_OK, nil
 }
 
-func appendQueryWithNewLine(buf *bytes.Buffer, values url.Values) {
-	keys := make([]string, 0, len(values))
-	for k := range values {
+func appendQueryWithNewLine(buf *bytes.Buffer, query url.Values) {
+	keys := make([]string, 0, len(query))
+	for k := range query {
 		keys = append(keys, k)
 	}
-	sort.Strings(keys)
+	sort.Stable(sort.StringSlice(keys))
 
 	for _, k := range keys {
-		for _, v := range values[k] {
-			buf.WriteString(v)
+		for _, v := range query[k] {
+			if v == "" {
+				buf.WriteString(k)
+			} else {
+				buf.WriteString(v)
+			}
 		}
 	}
 	buf.WriteRune('\n')

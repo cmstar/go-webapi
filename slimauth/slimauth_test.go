@@ -152,7 +152,7 @@ func TestSlimAuthApiHandler_errors(t *testing.T) {
 		r.Header.Set(HttpHeaderAuthorization, "SLIM-AUTH Key=key, Sign=sign, Timestamp=1")
 		r.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeForm)
 
-		testRequest(t, r, `{"Code":400,"Message":"invalid form data","Data":null}`)
+		testRequest(t, r, `{"Code":400,"Message":"invalid request body","Data":null}`)
 	})
 
 	t.Run("BadSign", func(t *testing.T) {
@@ -198,13 +198,23 @@ func TestSlimAuthApiHandler_ok(t *testing.T) {
 	s := newTestServer(NoTimeChecker)
 
 	t.Run("PlusViaForm", func(t *testing.T) {
+		/*
+			data to sign:
+				1661934251
+				POST
+				/
+				aPlus1122
+				bc
+				END
+		*/
+
 		auth := BuildAuthorizationHeader(Authorization{
 			Key:       _key,
-			Sign:      "66d4960c8b453050db7477c5c81afc366a95a98bcbffaad8d8732aacc812ed2b",
+			Sign:      "a9bb620ee2689035dbac5970deb6ba3789be2c0f61f0feb72b705410a9ac06f2",
 			Timestamp: _timestamp,
 		})
 
-		r, _ := http.NewRequest("POST", s.URL+"?Plus&x=11&aa=a&y=22", strings.NewReader("c=c&b=b"))
+		r, _ := http.NewRequest("POST", s.URL+"?Plus&x=11&AA=a&y=22", strings.NewReader("c=c&b=b"))
 		r.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeForm)
 		r.Header.Set(HttpHeaderAuthorization, auth)
 
@@ -212,9 +222,19 @@ func TestSlimAuthApiHandler_ok(t *testing.T) {
 	})
 
 	t.Run("GetKey", func(t *testing.T) {
+		/*
+			data to sign:
+				1661934251
+				POST
+				/
+				GetKey
+				{}
+				END
+		*/
+
 		auth := BuildAuthorizationHeader(Authorization{
 			Key:       _key,
-			Sign:      "4137ecfe066394f7c46e171a0def0b831d9d27971ff1e15825e2294624f44b37",
+			Sign:      "92f92b7840aefdc6bbb35f338ecdd2a80a2543c46f713d12c7b54825d7b69ab6",
 			Timestamp: _timestamp,
 		})
 

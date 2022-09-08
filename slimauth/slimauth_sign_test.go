@@ -119,9 +119,9 @@ func Test_buildDataToSign(t *testing.T) {
 		assert.Equal(t, want, string(data))
 	})
 
-	t.Run("Get", func(t *testing.T) {
+	t.Run("SingleSlashPath", func(t *testing.T) {
 		r := newRequest("",
-			"/path/sub/?bb=22&aa=11",
+			"/",
 			_requestTypeGet,
 			"",
 		)
@@ -129,21 +129,37 @@ func Test_buildDataToSign(t *testing.T) {
 		assert.Equal(t, SignResultType_OK, typ)
 		assert.Nil(t, err)
 
-		want := "12345\nGET\n/path/sub/\n1122\nEND"
+		want := "12345\nGET\n/\n\nEND"
 		assert.Equal(t, want, string(data))
 	})
 
-	t.Run("Form", func(t *testing.T) {
+	t.Run("Get", func(t *testing.T) {
 		r := newRequest("",
-			"/p?x=x&y=y",
-			_requestTypeForm,
-			"bb=22&aa=11&&cc=33",
+			"/path/sub/?bb=22&D&aa=11&cc=&D&E=5&bb=44",
+			_requestTypeGet,
+			"",
 		)
 		data, typ, err := buildDataToSign(r, false, 12345)
 		assert.Equal(t, SignResultType_OK, typ)
 		assert.Nil(t, err)
 
-		want := "12345\nPOST\n/p\nxy\n112233\nEND"
+		// ASCII 顺序下大写字母排在小写前面。
+		// 同名参数顺序需得到保证。
+		want := "12345\nGET\n/path/sub/\nDD5112244cc\nEND"
+		assert.Equal(t, want, string(data))
+	})
+
+	t.Run("Form", func(t *testing.T) {
+		r := newRequest("",
+			"/p?x=&y=",
+			_requestTypeForm,
+			"bb=22&aa=11&dd&&cc=33",
+		)
+		data, typ, err := buildDataToSign(r, false, 12345)
+		assert.Equal(t, SignResultType_OK, typ)
+		assert.Nil(t, err)
+
+		want := "12345\nPOST\n/p\nxy\n112233dd\nEND"
 		assert.Equal(t, want, string(data))
 	})
 
@@ -159,6 +175,31 @@ func Test_buildDataToSign(t *testing.T) {
 
 		want := "12345\nPOST\n/p\nxy\n{\"Data\":\"value\"}\nEND"
 		assert.Equal(t, want, string(data))
+	})
+
+	t.Run("ErrorBadForm", func(t *testing.T) {
+		r := newRequest("",
+			"",
+			_requestTypeForm,
+			"",
+		)
+		data, typ, err := buildDataToSign(r, false, 12345)
+		assert.Equal(t, SignResultType_InvalidRequestBody, typ)
+		assert.Nil(t, data)
+		require.Error(t, err)
+	})
+
+	t.Run("ErrorNilJsonBody", func(t *testing.T) {
+		r := newRequest("",
+			"",
+			_requestTypeJson,
+			"",
+		)
+		data, typ, err := buildDataToSign(r, false, 12345)
+		assert.Equal(t, SignResultType_InvalidRequestBody, typ)
+		assert.Nil(t, data)
+		require.Error(t, err)
+		require.Regexp(t, "missing body", err.Error())
 	})
 }
 
@@ -202,5 +243,16 @@ func TestSign(t *testing.T) {
 		signResult := Sign(r, false, _secret, _timestamp)
 		assert.Equal(t, SignResultType_OK, signResult.Type)
 		assert.Equal(t, "a126585a55869af00ca871e5b631e6c94430f20825b9881be4c7b44b84d8bf7e", signResult.Sign)
+	})
+
+	t.Run("OK-EmptyParamValue", func(t *testing.T) {
+		r := newRequest("",
+			"/path?a&b&c",
+			_requestTypeForm,
+			"x=&y=&z=",
+		)
+		signResult := Sign(r, false, _secret, _timestamp)
+		assert.Equal(t, SignResultType_OK, signResult.Type)
+		assert.Equal(t, "73c10acdc6ce9b7cb7253eaa3f918bb44a0561f1d887cd7fd4f958ea6142160d", signResult.Sign)
 	})
 }
