@@ -103,7 +103,7 @@ API 服务器将根据签名算法，校验 Sign 的值是否正确，并要求 
 
 # 例子3 - 使用 JSON 请求
 
-	POST http://temp.org//p/?x=1&y=2
+	POST http://temp.org/p/?x=1&y=2
 	Content-Type: application/json
 
 	{"key":"value"}
