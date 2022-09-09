@@ -31,7 +31,7 @@ API 服务器将根据签名算法，校验 Sign 的值是否正确，并要求 
 每个部分间用换行符（\n）分割，各部分的值为：
   - TIMESTAMP 是生成签名时的 UNIX 时间戳，需和 Authorization 头里的 Timestamp 参数值一样。
   - METHOD 是 HTTP 请求的 METHOD ，如 GET/POST/PUT 。
-  - PATH 请求的路径，没有路径部分是，使用“/”。
+  - PATH 请求的路径，没有路径部分时，使用“/”。
     比如请求地址是“http://temp.org/the/path/”则路径为“/the/path/”；
     地址是“http://temp.org/”或“http://temp.org”，路径均为“/”。
   - QUERY 是 URL 的 query string 部分拼接后的值。

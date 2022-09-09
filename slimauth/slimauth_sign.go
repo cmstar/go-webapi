@@ -199,7 +199,7 @@ func Sign(r *http.Request, rewindBody bool, secret string, timestamp int64) Sign
 // 构建用于签名的串，各部分末尾带一个换行符（ \n ）分割，依次为：
 //   - TIMESTAMP UNIX 时间戳，需和 Authorization 头里的一样。
 //   - METHOD 是 HTTP 请求的 METHOD ，如 GET/POST 。
-//   - PATH 请求的路径，没有路径部分是，使用“/”。
+//   - PATH 请求的路径，没有路径部分时，使用“/”。
 //     比如请求地址是“http://temp.org/the/path/”则路径为“/the/path/”；
 //     地址是“http://temp.org/”或“http://temp.org”，路径均为“/”。
 //   - QUERY 是 URL 的 query string 部分拼接后的值。
