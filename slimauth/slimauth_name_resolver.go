@@ -8,6 +8,7 @@ import (
 )
 
 type slimAuthApiNameResolver struct {
+	authScheme   string
 	secretFinder SecretFinderFunc
 	timeChecker  TimeCheckerFunc
 	raw          webapi.ApiNameResolver
@@ -15,7 +16,7 @@ type slimAuthApiNameResolver struct {
 
 // NewSlimAuthApiNameResolver 返回 SlimAuth 协议的 [webapi.ApiNameResolver] 。
 // 它增加了签名校验，其余都和 SlimAPI 一样。
-func NewSlimAuthApiNameResolver(secretFinder SecretFinderFunc, timeChecker TimeCheckerFunc) webapi.ApiNameResolver {
+func NewSlimAuthApiNameResolver(authScheme string, secretFinder SecretFinderFunc, timeChecker TimeCheckerFunc) webapi.ApiNameResolver {
 	if secretFinder == nil {
 		panic("secretFinder must be provided")
 	}
@@ -25,6 +26,7 @@ func NewSlimAuthApiNameResolver(secretFinder SecretFinderFunc, timeChecker TimeC
 	}
 
 	return &slimAuthApiNameResolver{
+		authScheme:   authScheme,
 		secretFinder: secretFinder,
 		timeChecker:  timeChecker,
 		raw:          slimapi.NewSlimApiNameResolver(),
@@ -39,7 +41,7 @@ func (x slimAuthApiNameResolver) FillMethod(state *webapi.ApiState) {
 
 func (x slimAuthApiNameResolver) verifySignature(state *webapi.ApiState) {
 	r := state.RawRequest
-	auth, err := ParseAuthorizationHeader(r)
+	auth, err := ParseAuthorizationHeader(r, x.authScheme)
 	if err != nil {
 		panic(webapi.CreateBadRequestError(state, err, "invalid Authorization"))
 	}

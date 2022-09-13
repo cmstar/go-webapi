@@ -10,7 +10,7 @@ const (
 	DefaultSignVersion = 1
 
 	// SlimAuth 协议在 HTTP Authorization 头的 <scheme> 部分，固定值。
-	AuthorizationScheme = "SLIM-AUTH"
+	DefaultAuthScheme = "SLIM-AUTH"
 
 	// HTTP 协议的 Authorization 头。
 	HttpHeaderAuthorization = "Authorization"
@@ -29,6 +29,10 @@ type SlimAuthApiHandlerOption struct {
 	// 名称。
 	Name string
 
+	// 指定 HTTP Authorization 头的 scheme 部分的值。
+	// 若为空，则自动使用默认值 [AuthorizationScheme] 。
+	AuthScheme string
+
 	// 用于查找签名所需的 secret 。必须提供。
 	SecretFinder SecretFinderFunc
 
@@ -45,7 +49,7 @@ func NewSlimAuthApiHandler(op SlimAuthApiHandlerOption) *webapi.ApiHandlerWrappe
 	}
 
 	h := slimapi.NewSlimApiHandler(op.Name)
-	h.ApiNameResolver = NewSlimAuthApiNameResolver(op.SecretFinder, timeChecker)
+	h.ApiNameResolver = NewSlimAuthApiNameResolver(op.AuthScheme, op.SecretFinder, timeChecker)
 	h.ApiDecoder = NewSlimAuthApiDecoder()
 	h.ApiLogger = NewSlimAuthApiLogger()
 	return h

@@ -76,19 +76,19 @@ func (methodProvider) GetKey(auth *Authorization) string {
 	return auth.Key
 }
 
-func newTestServer(timeChecker TimeCheckerFunc) *httptest.Server {
-	handler := NewSlimAuthApiHandler(SlimAuthApiHandlerOption{
-		SecretFinder: func(accessKey string) string {
-			switch accessKey {
-			case _key:
-				return _secret
+// op.SecretFinder 不需要给定，会自动赋值。
+func newTestServer(op SlimAuthApiHandlerOption) *httptest.Server {
+	op.SecretFinder = func(accessKey string) string {
+		switch accessKey {
+		case _key:
+			return _secret
 
-			default:
-				return ""
-			}
-		},
-		TimeChecker: timeChecker,
-	})
+		default:
+			return ""
+		}
+	}
+
+	handler := NewSlimAuthApiHandler(op)
 	handler.RegisterMethods(methodProvider{})
 
 	logger := logx.NopLogger
@@ -106,7 +106,9 @@ func testRequest(t *testing.T, r *http.Request, want string) {
 
 // 测试不包含时间戳校验的其他错误。
 func TestSlimAuthApiHandler_errors(t *testing.T) {
-	s := newTestServer(NoTimeChecker)
+	s := newTestServer(SlimAuthApiHandlerOption{
+		TimeChecker: NoTimeChecker,
+	})
 
 	t.Run("NoMethod", func(t *testing.T) {
 		r, _ := http.NewRequest("GET", s.URL, nil)
@@ -172,7 +174,7 @@ func TestSlimAuthApiHandler_errors(t *testing.T) {
 // 测试时间戳校验。
 func TestSlimAuthApiHandler_timeChecker(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
-		s := newTestServer(nil) // 自动使用 DefaultTimeChecker 。
+		s := newTestServer(SlimAuthApiHandlerOption{}) // 自动使用 DefaultTimeChecker 。
 
 		r, _ := http.NewRequest("GET", s.URL+"?Plus&x=1", nil)
 		signResult := AppendSign(r, _key, _secret, time.Now().Unix())
@@ -182,7 +184,9 @@ func TestSlimAuthApiHandler_timeChecker(t *testing.T) {
 	})
 
 	t.Run("TimestampError", func(t *testing.T) {
-		s := newTestServer(DefaultTimeChecker)
+		s := newTestServer(SlimAuthApiHandlerOption{
+			TimeChecker: DefaultTimeChecker,
+		})
 
 		timestamp := time.Now().Unix() + 1000
 
@@ -195,7 +199,9 @@ func TestSlimAuthApiHandler_timeChecker(t *testing.T) {
 }
 
 func TestSlimAuthApiHandler_ok(t *testing.T) {
-	s := newTestServer(NoTimeChecker)
+	s := newTestServer(SlimAuthApiHandlerOption{
+		TimeChecker: NoTimeChecker,
+	})
 
 	t.Run("PlusViaForm", func(t *testing.T) {
 		/*
@@ -243,5 +249,30 @@ func TestSlimAuthApiHandler_ok(t *testing.T) {
 		r.Header.Set(HttpHeaderAuthorization, auth)
 
 		testRequest(t, r, `{"Code":0,"Message":"","Data":"key"}`)
+	})
+}
+
+func TestSlimAuthApiHandler_customScheme(t *testing.T) {
+	const scheme = "CUSTOM-SCHEME"
+
+	s := newTestServer(SlimAuthApiHandlerOption{
+		AuthScheme:  scheme,
+		TimeChecker: NoTimeChecker,
+	})
+
+	// 复用测试用例，除 scheme 不一样外，其他都一样。
+	t.Run("PlusViaForm", func(t *testing.T) {
+		auth := BuildAuthorizationHeader(Authorization{
+			AuthScheme: scheme,
+			Key:        _key,
+			Sign:       "a9bb620ee2689035dbac5970deb6ba3789be2c0f61f0feb72b705410a9ac06f2",
+			Timestamp:  _timestamp,
+		})
+
+		r, _ := http.NewRequest("POST", s.URL+"?Plus&x=11&AA=a&y=22", strings.NewReader("c=c&b=b"))
+		r.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeForm)
+		r.Header.Set(HttpHeaderAuthorization, auth)
+
+		testRequest(t, r, `{"Code":0,"Message":"","Data":33}`)
 	})
 }

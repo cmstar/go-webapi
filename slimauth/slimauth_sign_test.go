@@ -27,6 +27,16 @@ func TestBuildAuthorizationHeader(t *testing.T) {
 		})
 		assert.Equal(t, "SLIM-AUTH Key=kk, Sign=ss, Timestamp=123", res)
 	})
+
+	t.Run("CustomScheme", func(t *testing.T) {
+		res := BuildAuthorizationHeader(Authorization{
+			AuthScheme: "CUSTOM",
+			Key:        "kk",
+			Sign:       "ss",
+			Timestamp:  123,
+		})
+		assert.Equal(t, "CUSTOM Key=kk, Sign=ss, Timestamp=123", res)
+	})
 }
 
 func TestParseAuthorizationHeader(t *testing.T) {
@@ -41,7 +51,7 @@ func TestParseAuthorizationHeader(t *testing.T) {
 			}
 		}
 
-		return ParseAuthorizationHeader(r)
+		return ParseAuthorizationHeader(r, "")
 	}
 
 	t.Run("NoHeader", func(t *testing.T) {
@@ -96,6 +106,25 @@ func TestParseAuthorizationHeader(t *testing.T) {
 
 		assert.Equal(t, "kk", auth.Key)
 		assert.Equal(t, 1, auth.Version)
+	})
+}
+
+func TestParseAuthorizationHeader_customScheme(t *testing.T) {
+	r := &http.Request{
+		Header: make(http.Header),
+	}
+	r.Header.Set(HttpHeaderAuthorization, "CUSTOM Key=kk, Sign=ss, Timestamp=1661843240")
+
+	t.Run("OK", func(t *testing.T) {
+		auth, err := ParseAuthorizationHeader(r, "CUSTOM")
+		require.NoError(t, err)
+		assert.Equal(t, "CUSTOM", auth.AuthScheme)
+	})
+
+	t.Run("Error", func(t *testing.T) {
+		_, err := ParseAuthorizationHeader(r, "")
+		require.Error(t, err)
+		assert.Regexp(t, "Authorization scheme error", err.Error())
 	})
 }
 

@@ -20,17 +20,23 @@ import (
 
 // Authorization 记录 SlimAuth 协议规定的 HTTP Authorization 头的内容。
 type Authorization struct {
-	Key       string // 请求方的标识。
-	Sign      string // 签名。
-	Timestamp int64  // 生成签名时的 UNIX 时间戳，单位是秒。
-	Version   int    // 算法版本。在 Authorization 头未给出时，默认为 [DEFAULT_AUTHORIZATION_VERSION] 。
+	AuthScheme string // Authorization 头最前面的 Scheme 部分。
+	Key        string // 请求方的标识。
+	Sign       string // 签名。
+	Timestamp  int64  // 生成签名时的 UNIX 时间戳，单位是秒。
+	Version    int    // 算法版本。在 Authorization 头未给出时，默认为 [DEFAULT_AUTHORIZATION_VERSION] 。
 }
 
 // BuildAuthorizationHeader 返回用于 HTTP 的 Authorization 头的值。
-// 若 [Authorization.Version] 为 0 ，则 Version 部分被省略。
+//   - 若 [Authorization.Version] 为 0 ，则 Version 部分被省略。
+//   - 若 [Authorization.AuthScheme] 为空，则使用默认值 [AuthorizationScheme] 。
 func BuildAuthorizationHeader(auth Authorization) string {
 	b := new(strings.Builder)
-	b.WriteString(AuthorizationScheme)
+	if auth.AuthScheme == "" {
+		b.WriteString(DefaultAuthScheme)
+	} else {
+		b.WriteString(auth.AuthScheme)
+	}
 
 	b.WriteString(" Key=")
 	b.WriteString(auth.Key)
@@ -57,12 +63,11 @@ func BuildAuthorizationHeader(auth Authorization) string {
 //	Authorization: Scheme Key=value_of_key, Sign=value_of_sign, Timestamp=unix_timestamp, Version=1
 //
 // 说明：
-//   - 每个 Key 前的空格被忽略。
-//   - key-value 对的顺序不做要求。
-//   - Scheme 必须是 SLIM-AUTH 。
+//   - 每个 Key 前的空格被忽略。 key-value 对的顺序不做要求。
+//   - Scheme 必须是匹配给定的 @authScheme ，若给定值为空，则使用默认值“SLIM-AUTH”。
 //   - Timestamp 签名时的 UNIX 时间戳，单位是秒。
 //   - Version 可省略，省略时默认为 1 。
-func ParseAuthorizationHeader(r *http.Request) (Authorization, error) {
+func ParseAuthorizationHeader(r *http.Request, authScheme string) (Authorization, error) {
 	auth := Authorization{}
 
 	headers, ok := r.Header[HttpHeaderAuthorization]
@@ -82,9 +87,14 @@ func ParseAuthorizationHeader(r *http.Request) (Authorization, error) {
 	}
 
 	scheme := header[:idx]
-	if scheme != AuthorizationScheme {
+	if authScheme == "" {
+		authScheme = DefaultAuthScheme
+	}
+
+	if scheme != authScheme {
 		return auth, fmt.Errorf("Authorization scheme error")
 	}
+	auth.AuthScheme = scheme
 
 	// Read params.
 	parts := strings.Split(header[idx+1:], ",")
