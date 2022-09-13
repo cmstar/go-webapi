@@ -234,13 +234,13 @@ func Test_buildDataToSign(t *testing.T) {
 
 func TestAppendSign(t *testing.T) {
 	r := newRequest("", "/", _requestTypeGet, "")
-	signResult := AppendSign(r, "key", _secret, _timestamp)
+	signResult := AppendSign(r, "key", _secret, "SCH", _timestamp)
 	require.Equal(t, SignResultType_OK, signResult.Type)
 
 	auth, ok := r.Header[HttpHeaderAuthorization]
 	require.True(t, ok)
 
-	want := "SLIM-AUTH Key=key, Sign=5ad198303bf9a3ad2d6192cdb57f8d3fdead5919089dcab04f4fb914d10ed94a, Timestamp=1661934251, Version=1"
+	want := "SCH Key=key, Sign=5ad198303bf9a3ad2d6192cdb57f8d3fdead5919089dcab04f4fb914d10ed94a, Timestamp=1661934251, Version=1"
 	assert.Equal(t, want, auth[0])
 }
 

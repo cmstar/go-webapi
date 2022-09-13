@@ -24,12 +24,12 @@ type Authorization struct {
 	Key        string // 请求方的标识。
 	Sign       string // 签名。
 	Timestamp  int64  // 生成签名时的 UNIX 时间戳，单位是秒。
-	Version    int    // 算法版本。在 Authorization 头未给出时，默认为 [DEFAULT_AUTHORIZATION_VERSION] 。
+	Version    int    // 算法版本。在 Authorization 头未给出时，默认为 [DefaultSignVersion] 。
 }
 
 // BuildAuthorizationHeader 返回用于 HTTP 的 Authorization 头的值。
 //   - 若 [Authorization.Version] 为 0 ，则 Version 部分被省略。
-//   - 若 [Authorization.AuthScheme] 为空，则使用默认值 [AuthorizationScheme] 。
+//   - 若 [Authorization.AuthScheme] 为空，则使用默认值 [DefaultAuthScheme] 。
 func BuildAuthorizationHeader(auth Authorization) string {
 	b := new(strings.Builder)
 	if auth.AuthScheme == "" {
@@ -164,8 +164,9 @@ const (
 //   - r 需要计算签名的请求。
 //   - accessKey 对应 Authorization 头中的 Key 字段的值。
 //   - secret HMAC-SHA256 的密钥，使用 UTF-8 字符集。
+//   - authScheme Authorization 头最前面的 Scheme 部分。为空时自动使用 [DefaultAuthScheme] 。
 //   - timestamp UNIX 时间戳，对应 Authorization 头的 Timestamp 字段的值。
-func AppendSign(r *http.Request, accessKey, secret string, timestamp int64) SignResult {
+func AppendSign(r *http.Request, accessKey, secret string, authScheme string, timestamp int64) SignResult {
 	// 追加 Authorization 头的请求基本上是用来发送的，而不是服务器接收到的。
 	// 这种情况下 HTTP body 需要是可用的，故总是设置参数 rewind=true 。
 	res := Sign(r, true, secret, timestamp)
@@ -174,10 +175,11 @@ func AppendSign(r *http.Request, accessKey, secret string, timestamp int64) Sign
 	}
 
 	auth := BuildAuthorizationHeader(Authorization{
-		Key:       accessKey,
-		Sign:      res.Sign,
-		Timestamp: timestamp,
-		Version:   DefaultSignVersion,
+		AuthScheme: authScheme,
+		Key:        accessKey,
+		Sign:       res.Sign,
+		Timestamp:  timestamp,
+		Version:    DefaultSignVersion,
 	})
 
 	r.Header.Set(HttpHeaderAuthorization, auth)

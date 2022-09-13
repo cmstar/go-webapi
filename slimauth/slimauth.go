@@ -30,7 +30,7 @@ type SlimAuthApiHandlerOption struct {
 	Name string
 
 	// 指定 HTTP Authorization 头的 scheme 部分的值。
-	// 若为空，则自动使用默认值 [AuthorizationScheme] 。
+	// 若为空，则自动使用默认值 [DefaultAuthScheme] 。
 	AuthScheme string
 
 	// 用于查找签名所需的 secret 。必须提供。

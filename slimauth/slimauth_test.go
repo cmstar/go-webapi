@@ -177,7 +177,7 @@ func TestSlimAuthApiHandler_timeChecker(t *testing.T) {
 		s := newTestServer(SlimAuthApiHandlerOption{}) // 自动使用 DefaultTimeChecker 。
 
 		r, _ := http.NewRequest("GET", s.URL+"?Plus&x=1", nil)
-		signResult := AppendSign(r, _key, _secret, time.Now().Unix())
+		signResult := AppendSign(r, _key, _secret, "", time.Now().Unix())
 		require.Equal(t, SignResultType_OK, signResult.Type)
 
 		testRequest(t, r, `{"Code":0,"Message":"","Data":1}`)
@@ -191,7 +191,7 @@ func TestSlimAuthApiHandler_timeChecker(t *testing.T) {
 		timestamp := time.Now().Unix() + 1000
 
 		r, _ := http.NewRequest("GET", s.URL+"?Plus&x=1", nil)
-		signResult := AppendSign(r, _key, _secret, timestamp)
+		signResult := AppendSign(r, _key, _secret, "", timestamp)
 		require.Equal(t, SignResultType_OK, signResult.Type)
 
 		testRequest(t, r, `{"Code":400,"Message":"timestamp error","Data":null}`)
