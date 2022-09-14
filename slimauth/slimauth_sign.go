@@ -190,7 +190,6 @@ func AppendSign(r *http.Request, accessKey, secret string, authScheme string, ti
 //   - r 需要计算签名的请求。。
 //   - rewindBody 指定是否需要重用 [http.Request.Body] 。
 //     若为 true ，则读取完 body 后，它会被替换为新的、可重读的 [bytes.Buffer] 。
-//     此设置在表单请求下不会生效，表单解析后应通过 [http.Request.Form]/[http.Request.PostForm] 访问。
 //   - secret HMAC-SHA256 的密钥，使用 UTF-8 字符集。
 //   - timestamp UNIX 时间戳，对应 Authorization 头的 Timestamp 字段的值。
 func Sign(r *http.Request, rewindBody bool, secret string, timestamp int64) SignResult {
@@ -252,29 +251,35 @@ func buildDataToSign(r *http.Request, rewindBody bool, timestamp int64) ([]byte,
 			return nil, SignResultType_MissingContentType, err
 		}
 
+		if r.Body == nil {
+			err := fmt.Errorf("missing body for %s", contentType[0])
+			return nil, SignResultType_InvalidRequestBody, err
+		}
+
+		// 对于流的读取，这类错误通常不应该发生，若发生,使用 panic 处理，使请求终止与 500 internal error 。
+		// 其他诸如格式错误等，则作为普通错误返回。
+		var body []byte
+		var err error
+		if rewindBody {
+			body, err = repeatableReadBody(r)
+		} else {
+			body, err = io.ReadAll(r.Body)
+		}
+
+		if err != nil {
+			panic(err)
+		}
+
 		switch contentType[0] {
 		case webapi.ContentTypeForm:
-			err := r.ParseForm()
+			values, err := url.ParseQuery(string(body))
 			if err != nil {
 				return nil, SignResultType_InvalidRequestBody, err
 			}
-			appendQueryWithNewLine(buf, r.PostForm)
+			appendQueryWithNewLine(buf, values)
 
 		case webapi.ContentTypeJson:
-			if r.Body == nil {
-				err := fmt.Errorf("missing body for %s", contentType[0])
-				return nil, SignResultType_InvalidRequestBody, err
-			}
-
-			if rewindBody {
-				data, err := repeatableReadBody(r)
-				if err != nil {
-					panic(err)
-				}
-				buf.Write(data)
-			} else {
-				io.Copy(buf, r.Body)
-			}
+			buf.Write(body)
 			buf.WriteRune('\n')
 
 		default:

@@ -142,7 +142,7 @@ func TestSlimAuthApiHandler_errors(t *testing.T) {
 	})
 
 	t.Run("UnsupportedContentType", func(t *testing.T) {
-		r, _ := http.NewRequest("POST", s.URL+"?Plus", nil)
+		r, _ := http.NewRequest("POST", s.URL+"?Plus", strings.NewReader("{}"))
 		r.Header.Set(HttpHeaderAuthorization, "SLIM-AUTH Key=key, Sign=sign, Timestamp=1")
 		r.Header.Set(webapi.HttpHeaderContentType, "Invalid-Content-Type")
 
@@ -209,22 +209,46 @@ func TestSlimAuthApiHandler_ok(t *testing.T) {
 				1661934251
 				POST
 				/
-				aPlus1122
-				bc
+				aPlus.c
+				1122
 				END
 		*/
 
 		auth := BuildAuthorizationHeader(Authorization{
 			Key:       _key,
-			Sign:      "a9bb620ee2689035dbac5970deb6ba3789be2c0f61f0feb72b705410a9ac06f2",
+			Sign:      "b58366e7c4239c27b6670543f3d6f36ea5ded6b457efc8299cfb6d62930fa3f4",
 			Timestamp: _timestamp,
 		})
 
-		r, _ := http.NewRequest("POST", s.URL+"?Plus&x=11&AA=a&y=22", strings.NewReader("c=c&b=b"))
+		r, _ := http.NewRequest("POST", s.URL+"?Plus&cc=c&AA=a&bb=.", strings.NewReader("x=11&Y=22"))
 		r.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeForm)
 		r.Header.Set(HttpHeaderAuthorization, auth)
 
 		testRequest(t, r, `{"Code":0,"Message":"","Data":33}`)
+	})
+
+	t.Run("PlusViaJson", func(t *testing.T) {
+		/*
+			data to sign:
+				1661934251
+				POST
+				/
+				Plus
+				{"x":"1","Y":-2}
+				END
+		*/
+
+		auth := BuildAuthorizationHeader(Authorization{
+			Key:       _key,
+			Sign:      "c5ea950c57ad810df0af3132d81a6b3b29ca05abfe7d10f8d8a264b45d116f74",
+			Timestamp: _timestamp,
+		})
+
+		r, _ := http.NewRequest("POST", s.URL+"?Plus", strings.NewReader(`{"x":"1","Y":-2}`))
+		r.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeJson)
+		r.Header.Set(HttpHeaderAuthorization, auth)
+
+		testRequest(t, r, `{"Code":0,"Message":"","Data":-1}`)
 	})
 
 	t.Run("GetKey", func(t *testing.T) {
@@ -260,8 +284,17 @@ func TestSlimAuthApiHandler_customScheme(t *testing.T) {
 		TimeChecker: NoTimeChecker,
 	})
 
-	// 复用测试用例，除 scheme 不一样外，其他都一样。
 	t.Run("PlusViaForm", func(t *testing.T) {
+		/*
+			data to sign:
+				1661934251
+				POST
+				/
+				aPlus1122
+				bc
+				END
+		*/
+
 		auth := BuildAuthorizationHeader(Authorization{
 			AuthScheme: scheme,
 			Key:        _key,
