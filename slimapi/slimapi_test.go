@@ -401,6 +401,6 @@ func (integrationTestMethodProvider) CannotEncode() CannotEncodeResponse {
 	return CannotEncodeResponse{}
 }
 
-func (integrationTestMethodProvider) Panic(v interface{}) {
+func (integrationTestMethodProvider) Panic(v any) {
 	panic(v)
 }

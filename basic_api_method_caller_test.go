@@ -27,16 +27,16 @@ func Test_basicApiMethodCaller_Call(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		method    interface{}
-		args      []interface{}
-		data      interface{}
+		method    any
+		args      []any
+		data      any
 		err       error
 		deferFunc func(t *testing.T)
 	}{
 		{
 			name:   "empty",
 			method: func() {},
-			args:   []interface{}{},
+			args:   []any{},
 			data:   nil,
 			err:    nil,
 		},
@@ -44,7 +44,7 @@ func Test_basicApiMethodCaller_Call(t *testing.T) {
 		{
 			name:   "succ1",
 			method: func(a, b int) struct{ a, b int } { return struct{ a, b int }{a, b} },
-			args:   []interface{}{1, 2},
+			args:   []any{1, 2},
 			data:   struct{ a, b int }{1, 2},
 			err:    nil,
 		},
@@ -52,7 +52,7 @@ func Test_basicApiMethodCaller_Call(t *testing.T) {
 		{
 			name:   "bizerr1",
 			method: func(v []int) error { return errx.NewBizError(v[0]+v[1], "msg", nil) },
-			args:   []interface{}{[]int{1, 2}},
+			args:   []any{[]int{1, 2}},
 			data:   nil,
 			err:    errx.NewBizError(3, "msg", nil),
 		},
@@ -60,7 +60,7 @@ func Test_basicApiMethodCaller_Call(t *testing.T) {
 		{
 			name:   "succ2",
 			method: func(a, b int) (string, error) { return "succ", nil },
-			args:   []interface{}{1, 2},
+			args:   []any{1, 2},
 			data:   "succ",
 			err:    nil,
 		},
@@ -68,7 +68,7 @@ func Test_basicApiMethodCaller_Call(t *testing.T) {
 		{
 			name:   "bizerr2",
 			method: func() (string, error) { return "data", errx.NewBizError(55, "m", nil) },
-			args:   []interface{}{},
+			args:   []any{},
 			data:   "data",
 			err:    errx.NewBizError(55, "m", nil),
 		},
@@ -76,7 +76,7 @@ func Test_basicApiMethodCaller_Call(t *testing.T) {
 		{
 			name:   "err1",
 			method: func() error { return errors.New("err") },
-			args:   []interface{}{},
+			args:   []any{},
 			data:   nil,
 			err:    errors.New("err"),
 		},
@@ -84,7 +84,7 @@ func Test_basicApiMethodCaller_Call(t *testing.T) {
 		{
 			name:   "err2",
 			method: func() (int, error) { return 3, errors.New("err") },
-			args:   []interface{}{},
+			args:   []any{},
 			data:   3,
 			err:    errors.New("err"),
 		},
@@ -92,7 +92,7 @@ func Test_basicApiMethodCaller_Call(t *testing.T) {
 		{
 			name:   "too-many-output",
 			method: func() (int, int, error) { return 0, 0, nil },
-			args:   []interface{}{},
+			args:   []any{},
 			data:   nil,
 			err:    nil,
 			deferFunc: func(t *testing.T) {
@@ -103,7 +103,7 @@ func Test_basicApiMethodCaller_Call(t *testing.T) {
 		{
 			name:   "wrong-output",
 			method: func() (int, int) { return 0, 0 },
-			args:   []interface{}{},
+			args:   []any{},
 			data:   nil,
 			err:    nil,
 			deferFunc: func(t *testing.T) {
@@ -140,7 +140,7 @@ func Test_basicApiMethodCaller_Call(t *testing.T) {
 }
 
 // 用于检测方法 panic 的 error 。 recovered 必须是个 error ，且错误信息为 expectedMessage 。
-func checkRecoveredError(t *testing.T, recovered interface{}, expectedMessage string) {
+func checkRecoveredError(t *testing.T, recovered any, expectedMessage string) {
 	if recovered == nil {
 		t.Error("should panic")
 		return

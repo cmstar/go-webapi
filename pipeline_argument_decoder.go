@@ -11,14 +11,14 @@ type ArgumentDecoder interface {
 	//
 	// 若给定的 API 参数（通过 index 和 argType 识别）可被当前函数解析，则返回 ok=true 及解析结果 v ，或者返回 ok=false 及解析错误；
 	// 若当前函数不支持给定参数的解析，则返回无错误的 ok=false 和 v=nil 。
-	DecodeArg(state *ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error)
+	DecodeArg(state *ApiState, index int, argType reflect.Type) (ok bool, v any, err error)
 }
 
 // ArgumentDecodeFunc 是 [ArgumentDecoder.DecodeArg] 的函数签名。
-type ArgumentDecodeFunc func(state *ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error)
+type ArgumentDecodeFunc func(state *ApiState, index int, argType reflect.Type) (ok bool, v any, err error)
 
 type argumentDecoderWrap struct {
-	f func(state *ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error)
+	f func(state *ApiState, index int, argType reflect.Type) (ok bool, v any, err error)
 }
 
 // ToArgumentDecoder 将 [ArgumentDecodeFunc] 包装成 [ArgumentDecoder] 。
@@ -27,7 +27,7 @@ func ToArgumentDecoder(f ArgumentDecodeFunc) ArgumentDecoder {
 }
 
 // DecodeArg implements [ArgumentDecoder.DecodeArg].
-func (x argumentDecoderWrap) DecodeArg(state *ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
+func (x argumentDecoderWrap) DecodeArg(state *ApiState, index int, argType reflect.Type) (ok bool, v any, err error) {
 	return x.f(state, index, argType)
 }
 
@@ -40,7 +40,7 @@ type apiStateArgumentDecoder struct{}
 
 var _ ArgumentDecoder = (*apiStateArgumentDecoder)(nil)
 
-func (apiStateArgumentDecoder) DecodeArg(state *ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
+func (apiStateArgumentDecoder) DecodeArg(state *ApiState, index int, argType reflect.Type) (ok bool, v any, err error) {
 	// ApiState 必须用指针获取，不允许用值类型。
 	if argType == reflect.TypeOf(state).Elem() {
 		PanicApiError(state, nil, "method '%s' arg%d %v: must be a pointer", state.Name, index, argType)

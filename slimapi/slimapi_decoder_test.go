@@ -26,10 +26,10 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "F1",
 		runMethods: RUN_ALL,
-		requestBody: map[string]interface{}{
+		requestBody: map[string]any{
 			"i": 3, // 大小写不敏感。
 		},
-		expected: []interface{}{
+		expected: []any{
 			struct{ I int }{3},
 		},
 	})
@@ -37,12 +37,12 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "F3",
 		runMethods: RUN_ALL,
-		requestBody: map[string]interface{}{
+		requestBody: map[string]any{
 			"i":           123,
 			"stringField": "ss",
 			"F":           "1.5",
 		},
-		expected: []interface{}{
+		expected: []any{
 			simpleIn{123, "ss", float32(1.5), 0},
 		},
 	})
@@ -51,16 +51,16 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 		methodName: "F3",
 		tag:        "mix",
 		runMethods: RUN_GETPOST,
-		requestQuery: map[string]interface{}{
+		requestQuery: map[string]any{
 			"StringField": "part1", // 大小写不敏感，两个 StringField 会被合并。
 			"noUse":       3,
 		},
-		requestBody: map[string]interface{}{
+		requestBody: map[string]any{
 			"i":           123,
 			"stringfield": "part2",
 			"F":           "1.5",
 		},
-		expected: []interface{}{
+		expected: []any{
 			simpleIn{123, "part1,part2", float32(1.5), 0},
 		},
 	})
@@ -69,16 +69,16 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 		methodName: "F3",
 		tag:        "override",
 		runMethods: RUN_JSON,
-		requestQuery: map[string]interface{}{
+		requestQuery: map[string]any{
 			"stringfield": "override", // JSON 格式下，被覆盖。
 			"noUse":       3,
 		},
-		requestBody: map[string]interface{}{
+		requestBody: map[string]any{
 			"i":           123,
 			"stringField": "ss",
 			"F":           "1.5",
 		},
-		expected: []interface{}{
+		expected: []any{
 			simpleIn{123, "ss", float32(1.5), 0},
 		},
 	})
@@ -87,10 +87,10 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "Ptr",
 		runMethods: RUN_ALL,
-		requestBody: map[string]interface{}{
+		requestBody: map[string]any{
 			"PTR": valString,
 		},
-		expected: []interface{}{
+		expected: []any{
 			struct{ Ptr *string }{&valString},
 		},
 	})
@@ -98,10 +98,10 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "Slice",
 		runMethods: RUN_ALL,
-		requestBody: map[string]interface{}{
+		requestBody: map[string]any{
 			"Sl": "11~22~33",
 		},
-		expected: []interface{}{
+		expected: []any{
 			struct{ Sl []uint64 }{[]uint64{11, 22, 33}},
 		},
 	})
@@ -110,11 +110,11 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 		methodName: "Time",
 		tag:        "short",
 		runMethods: RUN_ALL,
-		requestBody: map[string]interface{}{
+		requestBody: map[string]any{
 			"Std": "2022-04-17 21:18:25",
 			"Loc": "2022-11-03 07:30:06",
 		},
-		expected: []interface{}{
+		expected: []any{
 			timeIn{
 				Std: time.Date(2022, 4, 17, 21, 18, 25, 0, time.UTC),
 				Loc: Time(time.Date(2022, 11, 03, 7, 30, 6, 0, time.UTC)),
@@ -126,11 +126,11 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 		methodName: "Time",
 		tag:        "long",
 		runMethods: RUN_ALL,
-		requestBody: map[string]interface{}{
+		requestBody: map[string]any{
 			"Std": "2022-04-17 21:18:25.12345",
 			"Loc": "2022-11-03 07:30:06.321",
 		},
-		expected: []interface{}{
+		expected: []any{
 			timeIn{
 				Std: time.Date(2022, 4, 17, 21, 18, 25, int(123450*time.Microsecond), time.UTC),
 				Loc: Time(time.Date(2022, 11, 03, 7, 30, 6, int(321*time.Millisecond), time.UTC)),
@@ -142,11 +142,11 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 		methodName: "Time",
 		tag:        "RFC3339",
 		runMethods: RUN_ALL,
-		requestBody: map[string]interface{}{
+		requestBody: map[string]any{
 			"Std": "2022-04-17T21:18:25.12345Z",
 			"Loc": "2022-11-03T07:30:06.321Z",
 		},
-		expected: []interface{}{
+		expected: []any{
 			timeIn{
 				Std: time.Date(2022, 4, 17, 21, 18, 25, int(123450*time.Microsecond), time.UTC),
 				Loc: Time(time.Date(2022, 11, 03, 7, 30, 6, int(321*time.Millisecond), time.UTC)),
@@ -157,18 +157,18 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "Complex",
 		runMethods: RUN_JSON, // 嵌套复杂类型不支持 GET 。
-		requestBody: map[string]interface{}{
-			"F3Slice": []interface{}{
-				map[string]interface{}{"I": 12},
-				map[string]interface{}{"StringField": "gg"},
+		requestBody: map[string]any{
+			"F3Slice": []any{
+				map[string]any{"I": 12},
+				map[string]any{"StringField": "gg"},
 			},
-			"MM": map[string]interface{}{
+			"MM": map[string]any{
 				"k1": []int{3, 2, 1},
 				"k2": "11~22~33",
 			},
 			"Boolean": true,
 		},
-		expected: []interface{}{
+		expected: []any{
 			complexIn{
 				F3Slice: []*simpleIn{
 					{I: 12},
@@ -186,7 +186,7 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "WithApiState",
 		runMethods: RUN_ALL,
-		expected: []interface{}{
+		expected: []any{
 			EXPECT_API_STATE,
 		},
 	})
@@ -194,7 +194,7 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "WithAll",
 		runMethods: RUN_ALL,
-		expected: []interface{}{
+		expected: []any{
 			EXPECT_API_STATE,
 			simpleIn{},
 		},
@@ -203,7 +203,7 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "WithAllReverse",
 		runMethods: RUN_ALL,
-		expected: []interface{}{
+		expected: []any{
 			simpleIn{},
 			EXPECT_API_STATE,
 		},
@@ -236,7 +236,7 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 	p.testOne(testOneArgs{
 		methodName: "CannotConvert",
 		runMethods: RUN_GET,
-		requestBody: map[string]interface{}{
+		requestBody: map[string]any{
 			"C": 1,
 		},
 		errPattern:      "bad request",
@@ -318,19 +318,19 @@ const (
 )
 
 type testOneArgs struct {
-	methodName      string                 // 方法名称。
-	tag             string                 // 用于备注测试用例。
-	runMethods      RunRequestType         // 位标记，指定要执行的请求类型。
-	requestQuery    map[string]interface{} // 固定放在 URL 上的输入参数。通过 HTTP 请求发送，反序列化后传给 methodName 对应方法。
-	requestBody     map[string]interface{} // Body 部分的输入参数。 GET 时会和 requestQuery 合并在一起。
-	expected        []interface{}          // 预期的解析结果，顺序需和 methodName 对应方法的入参一致。可以用 ExpectedSpecialType 指代特定类型。
-	errPattern      string                 // 断言 ApiState.Error 的消息。
-	panicMsgPattern string                 // 正则，用于验证 panic 的消息；若预期不会 panic ，则为空。
+	methodName      string         // 方法名称。
+	tag             string         // 用于备注测试用例。
+	runMethods      RunRequestType // 位标记，指定要执行的请求类型。
+	requestQuery    map[string]any // 固定放在 URL 上的输入参数。通过 HTTP 请求发送，反序列化后传给 methodName 对应方法。
+	requestBody     map[string]any // Body 部分的输入参数。 GET 时会和 requestQuery 合并在一起。
+	expected        []any          // 预期的解析结果，顺序需和 methodName 对应方法的入参一致。可以用 ExpectedSpecialType 指代特定类型。
+	errPattern      string         // 断言 ApiState.Error 的消息。
+	panicMsgPattern string         // 正则，用于验证 panic 的消息；若预期不会 panic ，则为空。
 }
 
 // 测试一个方法。
 func (p slimApiDecoderTestProvider) testOne(args testOneArgs) {
-	checkRecoveredError := func(t *testing.T, recovered interface{}) {
+	checkRecoveredError := func(t *testing.T, recovered any) {
 		require.NotNil(t, recovered, "should panic")
 		apiErr, ok := recovered.(webapi.ApiError)
 		require.Truef(t, ok, "must panic ApiError, got %T: %v", recovered, recovered)
@@ -340,17 +340,17 @@ func (p slimApiDecoderTestProvider) testOne(args testOneArgs) {
 	// map，和 slice 可以是 nil ，影响序列化和结果比对，统一转成空集。
 	expected := args.expected
 	if args.expected == nil {
-		expected = make([]interface{}, 0)
+		expected = make([]any, 0)
 	}
 
 	requestQuery := args.requestQuery
 	if requestQuery == nil {
-		requestQuery = make(map[string]interface{})
+		requestQuery = make(map[string]any)
 	}
 
 	requestBody := args.requestBody
 	if requestBody == nil {
-		requestBody = make(map[string]interface{})
+		requestBody = make(map[string]any)
 	}
 
 	buildTestName := func(runMethod string) string {
@@ -400,9 +400,9 @@ func (p slimApiDecoderTestProvider) testOne(args testOneArgs) {
 
 func (p slimApiDecoderTestProvider) doTestGet(
 	methodName string,
-	requestQuery map[string]interface{},
-	requestBody map[string]interface{}, // Merge with requestQuery.
-	expected []interface{},
+	requestQuery map[string]any,
+	requestBody map[string]any, // Merge with requestQuery.
+	expected []any,
 	errPattern string,
 ) {
 	url := urlBase
@@ -427,9 +427,9 @@ func (p slimApiDecoderTestProvider) doTestGet(
 
 func (p slimApiDecoderTestProvider) doTestPostForm(
 	methodName string,
-	requestQuery map[string]interface{},
-	requestBody map[string]interface{},
-	expected []interface{},
+	requestQuery map[string]any,
+	requestBody map[string]any,
+	expected []any,
 	errPattern string,
 ) {
 	url := urlBase
@@ -448,9 +448,9 @@ func (p slimApiDecoderTestProvider) doTestPostForm(
 
 func (p slimApiDecoderTestProvider) doTestPostJson(
 	methodName string,
-	requestQuery map[string]interface{},
-	requestBody map[string]interface{},
-	expected []interface{},
+	requestQuery map[string]any,
+	requestBody map[string]any,
+	expected []any,
 	errPattern string,
 ) {
 	url := urlBase
@@ -471,9 +471,9 @@ func (p slimApiDecoderTestProvider) doTestPostJson(
 
 func (p slimApiDecoderTestProvider) doTestMultipartForm(
 	methodName string,
-	requestQuery map[string]interface{},
-	requestBody map[string]interface{},
-	expected []interface{},
+	requestQuery map[string]any,
+	requestBody map[string]any,
+	expected []any,
 	errPattern string,
 ) {
 	url := urlBase
@@ -503,7 +503,7 @@ func (p slimApiDecoderTestProvider) doTestMultipartForm(
 	p.doTestDecode(state, methodName, meta_RequestFormat_Post, expected, errPattern)
 }
 
-func (slimApiDecoderTestProvider) buildQueryString(nameValues map[string]interface{}) string {
+func (slimApiDecoderTestProvider) buildQueryString(nameValues map[string]any) string {
 	res := ""
 	for name, value := range nameValues {
 		if len(res) > 0 {
@@ -515,7 +515,7 @@ func (slimApiDecoderTestProvider) buildQueryString(nameValues map[string]interfa
 }
 
 func (p slimApiDecoderTestProvider) doTestDecode(
-	state *webapi.ApiState, methodName string, format string, expected []interface{}, errPattern string) {
+	state *webapi.ApiState, methodName string, format string, expected []any, errPattern string) {
 	setRequestFormat(state, format)
 	state.Method = webapi.ApiMethod{
 		Name:     methodName,
@@ -526,7 +526,7 @@ func (p slimApiDecoderTestProvider) doTestDecode(
 	decoder := NewSlimApiDecoder()
 	decoder.Decode(state)
 
-	iArgs := make([]interface{}, 0, len(state.Args))
+	iArgs := make([]any, 0, len(state.Args))
 	for i := 0; i < len(state.Args); i++ {
 		// 对于不好检测的类型，转成对应的常量进行比对。
 		switch v := state.Args[i].Interface().(type) {

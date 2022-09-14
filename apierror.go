@@ -36,8 +36,9 @@ type ApiError struct {
 // CreateApiError 创建一个 ApiError 。
 // message 和 args 指定描述信息，使用 fmt.Sprintf() 格式化。 cause 是引起此错误的错误，可以为 nil 。
 // message 会体现在  ApiError.Error() ，格式为：
-//   message:: cause.Error()
-func CreateApiError(state *ApiState, cause error, message string, args ...interface{}) ApiError {
+//
+//	message:: cause.Error()
+func CreateApiError(state *ApiState, cause error, message string, args ...any) ApiError {
 	if len(args) > 0 {
 		message = fmt.Sprintf(message, args...)
 	}
@@ -61,7 +62,7 @@ func CreateApiError(state *ApiState, cause error, message string, args ...interf
 
 // PanicApiError 使用 CreateApiError 创建 ApiError ，并直接直接 panic 。
 // 当 ApiHandler 遇见不应该发生（如编码 bug）的异常情况时，可使用此方法中断处理过程。
-func PanicApiError(state *ApiState, cause error, message string, args ...interface{}) {
+func PanicApiError(state *ApiState, cause error, message string, args ...any) {
 	e := CreateApiError(state, cause, message, args...)
 	panic(e)
 }
@@ -76,7 +77,7 @@ type BadRequestError struct {
 // CreateBadRequestError 创建一个 BadRequestError 。
 // message 和 args 指定其消息，使用 fmt.Sprintf() 格式化。
 // 描述信息可能作为 WebAPI 的返回值，被请求者看到，故可能不应当过多暴露程序细节。更具体的错误可以放在 cause 上。
-func CreateBadRequestError(state *ApiState, cause error, message string, args ...interface{}) BadRequestError {
+func CreateBadRequestError(state *ApiState, cause error, message string, args ...any) BadRequestError {
 	message = fmt.Sprintf(message, args...)
 	e := BadRequestError{
 		withinStateError{
@@ -92,7 +93,6 @@ func CreateBadRequestError(state *ApiState, cause error, message string, args ..
 // 此方法可用于搭配 ApiLogger.Log() 输出带有错误描述的日志。
 //
 // 描述信息使用 common.Errors.Describe() 获取。
-//
 func DescribeError(err error) (logLevel logx.Level, errTypeName, errDescription string) {
 	if err == nil {
 		return logx.LevelInfo, "", ""

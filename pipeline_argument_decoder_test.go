@@ -9,25 +9,25 @@ import (
 )
 
 func TestDecodeFuncPipeline(t *testing.T) {
-	decodeInt := func(state *ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
+	decodeInt := func(state *ApiState, index int, argType reflect.Type) (ok bool, v any, err error) {
 		if argType.Kind() != reflect.Int {
 			return false, nil, nil
 		}
 		return true, 11, nil
 	}
-	decodeString := func(state *ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
+	decodeString := func(state *ApiState, index int, argType reflect.Type) (ok bool, v any, err error) {
 		if argType.Kind() != reflect.String {
 			return false, nil, nil
 		}
 		return true, "value", nil
 	}
-	errorOnFloat64 := func(state *ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
+	errorOnFloat64 := func(state *ApiState, index int, argType reflect.Type) (ok bool, v any, err error) {
 		if argType.Kind() != reflect.Float64 {
 			return false, nil, nil
 		}
 		return false, nil, errors.New("e")
 	}
-	nilOnFloat32 := func(state *ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
+	nilOnFloat32 := func(state *ApiState, index int, argType reflect.Type) (ok bool, v any, err error) {
 		if argType.Kind() != reflect.Float32 {
 			return false, nil, nil
 		}
@@ -40,7 +40,7 @@ func TestDecodeFuncPipeline(t *testing.T) {
 		ToArgumentDecoder(nilOnFloat32),
 	)
 
-	run := func(fn interface{}) *ApiState {
+	run := func(fn any) *ApiState {
 		s := &ApiState{
 			Method: ApiMethod{
 				Value: reflect.ValueOf(fn),

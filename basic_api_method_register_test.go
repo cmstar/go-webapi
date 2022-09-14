@@ -13,10 +13,10 @@ func Test_basicApiMethodRegister_RegisterMethod(t *testing.T) {
 	// @name 测试用例名称，也是注册的方法名称。
 	// @panicPattern 若不为空，断言 panic 的消息，必须匹配此正则。
 	// @f 要注册的函数。
-	testOne := func(name, panicPattern string, f interface{}) {
+	testOne := func(name, panicPattern string, f any) {
 		t.Run(name, func(t *testing.T) {
 			defer func() {
-				var msg interface{}
+				var msg any
 				if msg = recover(); msg == nil {
 					return
 				}
@@ -44,7 +44,7 @@ func Test_basicApiMethodRegister_RegisterMethod(t *testing.T) {
 			found := false
 			lowerName := strings.ToLower(name)
 
-			reg.methods.Range(func(k, m interface{}) bool {
+			reg.methods.Range(func(k, m any) bool {
 				if k == lowerName && m.(ApiMethod).Value == methodValue {
 					found = true
 					return false
@@ -210,7 +210,7 @@ func Test_basicApiMethodRegister_RegisterMethods(t *testing.T) {
 
 	// 确认没有其他方法被注册。
 	c := 0
-	reg.methods.Range(func(key, value interface{}) bool { c++; return true })
+	reg.methods.Range(func(key, value any) bool { c++; return true })
 	if count != c {
 		t.Errorf("totally %d methods, expect %d", c, count)
 	}

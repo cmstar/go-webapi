@@ -18,7 +18,7 @@ func NewSlimAuthApiDecoder() webapi.ApiDecoder {
 // 用于解析方法上的 Authorization 参数，也可以是其指针。
 type authorizationArgumentDecoder struct{}
 
-func (x authorizationArgumentDecoder) DecodeArg(state *webapi.ApiState, index int, argType reflect.Type) (ok bool, v interface{}, err error) {
+func (x authorizationArgumentDecoder) DecodeArg(state *webapi.ApiState, index int, argType reflect.Type) (ok bool, v any, err error) {
 	isPtr := argType.Kind() == reflect.Ptr
 	if isPtr {
 		argType = argType.Elem()

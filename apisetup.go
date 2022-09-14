@@ -20,7 +20,7 @@ type ApiSetup struct {
 // 每个方法的注册逻辑与 RegisterMethod 一致。
 // 特别的，如果格式为 Method____abc ，两个下划线之后存在有效名称，则 WebAPI 名称为 __abc ，从两个下划线后的下一个字符（还是下划线）开始取。
 //
-func (setup ApiSetup) RegisterMethods(providerStruct interface{}) ApiSetup {
+func (setup ApiSetup) RegisterMethods(providerStruct any) ApiSetup {
 	setup.handler.RegisterMethods(providerStruct)
 	return setup
 }

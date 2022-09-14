@@ -16,7 +16,8 @@ func NewLogRecorder() *LogRecorder {
 
 // LogRecorder 实现 logx.Logger ，将全部日志追加记录在一个字符串上，每个日志末尾追加一个换行。
 // 每个日志的字符串拼接格式为，格式化使用 fmt.Sprintf() ：
-//   level={LEVEL} message={MESSAGE} KEY1=VALUE1 KEY2=VALUE2 ...
+//
+//	level={LEVEL} message={MESSAGE} KEY1=VALUE1 KEY2=VALUE2 ...
 type LogRecorder struct {
 	buf *strings.Builder
 	m   []map[string]string
@@ -25,7 +26,7 @@ type LogRecorder struct {
 var _ logx.Logger = (*LogRecorder)(nil)
 
 // Log 实现 Logger.Log() 。
-func (l *LogRecorder) Log(level logx.Level, message string, keyValues ...interface{}) error {
+func (l *LogRecorder) Log(level logx.Level, message string, keyValues ...any) error {
 	m := make(map[string]string)
 	l.m = append(l.m, m)
 
@@ -63,7 +64,7 @@ func (l *LogRecorder) Log(level logx.Level, message string, keyValues ...interfa
 }
 
 // Log 实现 Logger.LogFn() 。
-func (l *LogRecorder) LogFn(level logx.Level, messageFactory func() (string, []interface{})) error {
+func (l *LogRecorder) LogFn(level logx.Level, messageFactory func() (string, []any)) error {
 	m, kv := messageFactory()
 	return l.Log(level, m, kv...)
 }

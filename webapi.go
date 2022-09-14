@@ -117,7 +117,7 @@ type ApiMethodRegister interface {
 	// 每个方法的注册逻辑与 RegisterMethod 一致。
 	// 特别的，如果格式为 Method____abc ，两个下划线之后存在有效名称，则 WebAPI 名称为 __abc ，从两个下划线后的下一个字符（还是下划线）开始取。
 	//
-	RegisterMethods(providerStruct interface{})
+	RegisterMethods(providerStruct any)
 
 	// GetMethod 返回具有指定名称的方法。若方法存在，返回 ApiMethod 和 true ；若未被注册，返回零值和 false 。
 	// 对于方法名称应采用大小写不敏感的方式处理。

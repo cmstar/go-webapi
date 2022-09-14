@@ -32,7 +32,7 @@ func (r *basicApiMethodRegister) RegisterMethod(m ApiMethod) {
 }
 
 // Register implements ApiMethodRegister.Register
-func (r *basicApiMethodRegister) RegisterMethods(providerStruct interface{}) {
+func (r *basicApiMethodRegister) RegisterMethods(providerStruct any) {
 	if providerStruct == nil {
 		panic("the given provider should not be nil")
 	}
