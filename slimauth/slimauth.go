@@ -14,9 +14,14 @@ const (
 
 	// HTTP 协议的 Authorization 头。
 	HttpHeaderAuthorization = "Authorization"
+)
 
+// 用作在 ApiState 上存储自定义数据的 key 。
+type customDataKey int
+
+const (
 	// 用于缓存 Authorization 参数的 key 。
-	_authorizationArgumentKey = "slimauthAuthorizationData"
+	_authorizationArgumentKey customDataKey = iota
 )
 
 // SecretFinderFunc 用于获取绑定到指定 accessKey 的 secret 。

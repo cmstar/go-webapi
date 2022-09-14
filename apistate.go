@@ -72,7 +72,7 @@ type ApiState struct {
 	ResponseContentType string
 
 	// customData 用于记录没有预定义的数据，即不在其他字段中体现的数据，由各处理过程自行决定。
-	customData map[string]any
+	customData []struct{ k, v any }
 }
 
 // NewState 创建一个新的 ApiState ，每个请求应使用一个新的 ApiState 。
@@ -83,7 +83,6 @@ func NewState(r http.ResponseWriter, w *http.Request, handler ApiHandler) *ApiSt
 		RawResponse: r,
 	}
 	s.Query = ParseQueryString(w.URL.RawQuery)
-	s.customData = make(map[string]any)
 	return s
 }
 
@@ -112,13 +111,19 @@ func (s *ApiState) MustHaveResponse() {
 	}
 }
 
-// SetCustomData 设置一个扩展字段，字段的聚义意义由各处理过程自行决定。
-func (s *ApiState) SetCustomData(key string, value any) {
-	s.customData[key] = value
+// SetCustomData 在当前 [*ApiState] 中存储一个自定义的值。
+// 原理和 [context.WithValue] 类似， key 必须是可比较的。
+func (s *ApiState) SetCustomData(key, value any) {
+	s.customData = append(s.customData, struct{ k, v any }{key, value})
 }
 
-// GetCustomData 获取具有指定名称的扩展字段。返回一个 bool 值表示字段是否存在。
-func (s *ApiState) GetCustomData(key string) (any, bool) {
-	v, ok := s.customData[key]
-	return v, ok
+// GetCustomData 读取 [SetCustomData] 方法存放的值。返回一个 bool 值表示 key 是否存在。
+func (s *ApiState) GetCustomData(key any) (any, bool) {
+	data := s.customData
+	for i := 0; i < len(data); i++ {
+		if data[i].k == key {
+			return data[i].v, true
+		}
+	}
+	return nil, false
 }

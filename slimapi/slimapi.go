@@ -22,15 +22,20 @@ const (
 	// 解析请求的 body 部分时最大可用的内存，读取 multipart-form-data 型数据时，超过此字节数将使用临时文件存储。
 	// 另外，也是单独使用代码读取 body 时，允许的最大的字节数。
 	maxMemorySizeParseRequestBody = 10 * 1024 * 1024
+)
 
+// 用作在 ApiState 上存储自定义数据的 key 。
+type customDataKey int
+
+const (
 	// 自定义字段。记录当前请求使用的格式（对应 meta_RequestFormat_* 常量）。格式优先从 URL 上解析，其次是 Content-Type 头。
-	customData_RequestFormat = "RequestFormat"
+	customData_RequestFormat customDataKey = iota
 
 	// 对于 JSONP 请求，记录回调方法的名称。
-	customData_ResponseCallback = "ResponseCallback"
+	customData_ResponseCallback
 
 	// 自定义字段。记录当前请求 body 部分， ApiDecoder.Decode() 在执行后，将读取到的 body 存储在此字段上。
-	customData_BufferedBody = "RequestBody"
+	customData_BufferedBody
 )
 
 // Conv 是用于 SlimAPI 的 [conv.Conv] 实例，它支持：
@@ -96,7 +101,7 @@ func getBufferedBody(state *webapi.ApiState) string {
 	return getCustomString(state, customData_BufferedBody)
 }
 
-func getCustomString(state *webapi.ApiState, key string) string {
+func getCustomString(state *webapi.ApiState, key any) string {
 	v, ok := state.GetCustomData(key)
 	if ok {
 		return v.(string)
