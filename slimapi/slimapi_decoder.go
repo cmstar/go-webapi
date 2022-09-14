@@ -35,7 +35,7 @@ func (d slimApiMethodStructArgDecoder) DecodeArg(state *webapi.ApiState, index i
 		return false, nil, webapi.CreateBadRequestError(state, err, "bad request")
 	}
 
-	val, err := slimApiConv.ConvertType(paramMap, argType)
+	val, err := Conv.ConvertType(paramMap, argType)
 	if err != nil {
 		return false, nil, webapi.CreateBadRequestError(state, err, "bad request")
 	}

@@ -33,20 +33,18 @@ const (
 	customData_BufferedBody = "RequestBody"
 )
 
-// slimApiConv 用于 SlimAPI 中的 map 到 struct 的映射。
-var slimApiConv = conv.Conv{
+// Conv 是用于 SlimAPI 的 [conv.Conv] 实例，它支持：
+//   - 使用大小写不敏感（case-insensitive）的方式处理字段。
+//   - 支持 SlimAPI 规定的时间格式 yyyyMMdd HH:mm:ss 。
+//   - 支持字符串到数组的转换，使用 ~ 分割，如将 "1~2~3" 转为 [1, 2, 3] 。
+var Conv = conv.Conv{
 	Conf: conv.Config{
-		// 使用大小写不敏感（case-insensitive）的方式处理字段。
 		FieldMatcherCreator: &conv.SimpleMatcherCreator{
 			Conf: conv.SimpleMatcherConfig{
 				CaseInsensitive: true,
 			},
 		},
-
-		// 支持 SlimAPI 规定的时间格式 yyyyMMdd HH:mm:ss 。
-		StringToTime: parseTime,
-
-		// 支持字符串到数组的转换，使用 ~ 分割，如将 "1~2~3" 转为 [1, 2, 3] 。
+		StringToTime:   ParseTime,
 		StringSplitter: func(v string) []string { return strings.Split(v, "~") },
 	},
 }
