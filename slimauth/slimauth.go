@@ -14,13 +14,17 @@ const (
 
 	// HTTP 协议的 Authorization 头。
 	HttpHeaderAuthorization = "Authorization"
+
+	// URL 上的元参数。当没有 Authorization 头时，也可以通过此参数获取 Authorization 值。
+	// 优先级低于 Authorization 头。
+	_metaParamAuth = "~auth"
 )
 
 // 用作在 ApiState 上存储自定义数据的 key 。
 type customDataKey int
 
 const (
-	// 用于缓存 Authorization 参数的 key 。
+	// 用于在 [webapi.ApiState] 中缓存 Authorization 参数的 key 。
 	_authorizationArgumentKey customDataKey = iota
 )
 

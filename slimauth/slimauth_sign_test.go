@@ -2,6 +2,7 @@ package slimauth
 
 import (
 	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -40,8 +41,15 @@ func TestBuildAuthorizationHeader(t *testing.T) {
 }
 
 func TestParseAuthorizationHeader(t *testing.T) {
-	do := func(header ...string) (Authorization, error) {
+	do := func(authQuery string, header ...string) (Authorization, error) {
+		uri := "http://temp.org"
+		if authQuery != "" {
+			uri += "?~auth=" + url.QueryEscape(authQuery)
+		}
+
+		u, _ := url.Parse(uri)
 		r := &http.Request{
+			URL:    u,
 			Header: make(http.Header),
 		}
 
@@ -55,31 +63,31 @@ func TestParseAuthorizationHeader(t *testing.T) {
 	}
 
 	t.Run("NoHeader", func(t *testing.T) {
-		_, err := do()
+		_, err := do("")
 		require.Error(t, err)
 		require.Regexp(t, "missing", err.Error())
 	})
 
 	t.Run("TooManyHeaders", func(t *testing.T) {
-		_, err := do("1", "2")
+		_, err := do("", "1", "2")
 		require.Error(t, err)
 		require.Regexp(t, "more than one", err.Error())
 	})
 
 	t.Run("NoScheme", func(t *testing.T) {
-		_, err := do("gg")
+		_, err := do("", "gg")
 		require.Error(t, err)
 		require.Regexp(t, "scheme error", err.Error())
 	})
 
 	t.Run("WrongScheme", func(t *testing.T) {
-		_, err := do("Bad Key=1")
+		_, err := do("", "Bad Key=1")
 		require.Error(t, err)
 		require.Regexp(t, "scheme error", err.Error())
 	})
 
 	t.Run("BadVersion", func(t *testing.T) {
-		_, err := do("SLIM-AUTH Version=abc")
+		_, err := do("", "SLIM-AUTH Version=abc")
 		require.Error(t, err)
 		require.Regexp(t, "version error", err.Error())
 	})
@@ -90,8 +98,8 @@ func TestParseAuthorizationHeader(t *testing.T) {
 		require.Regexp(t, "timestamp error", err.Error())
 	})
 
-	t.Run("OK", func(t *testing.T) {
-		auth, err := do("SLIM-AUTH Key=kk, Sign=ss, Timestamp=1661843240, Version=123")
+	t.Run("OK-FromHeader", func(t *testing.T) {
+		auth, err := do("", "SLIM-AUTH Key=kk, Sign=ss, Timestamp=1661843240, Version=123")
 		require.NoError(t, err)
 
 		assert.Equal(t, "kk", auth.Key)
@@ -100,12 +108,22 @@ func TestParseAuthorizationHeader(t *testing.T) {
 		assert.Equal(t, 123, auth.Version)
 	})
 
-	t.Run("DefaultVersion", func(t *testing.T) {
-		auth, err := do("SLIM-AUTH Key=kk")
+	t.Run("OK-DefaultVersion", func(t *testing.T) {
+		auth, err := do("", "SLIM-AUTH Key=kk")
 		require.NoError(t, err)
 
 		assert.Equal(t, "kk", auth.Key)
 		assert.Equal(t, 1, auth.Version)
+	})
+
+	t.Run("OK-FromQuery", func(t *testing.T) {
+		auth, err := do("SLIM-AUTH Key=kk, Sign=ss, Timestamp=1661843240, Version=123")
+		require.NoError(t, err)
+
+		assert.Equal(t, "kk", auth.Key)
+		assert.Equal(t, "ss", auth.Sign)
+		assert.Equal(t, int64(1661843240), auth.Timestamp)
+		assert.Equal(t, 123, auth.Version)
 	})
 }
 
@@ -164,7 +182,7 @@ func Test_buildDataToSign(t *testing.T) {
 
 	t.Run("Get", func(t *testing.T) {
 		r := newRequest("",
-			"/path/sub/?bb=22&D&aa=11&cc=&D&E=5&bb=44",
+			"/path/sub/?bb=22&D&aa=11&cc=&D&E=5&bb=44&~auth=x",
 			_requestTypeGet,
 			"",
 		)

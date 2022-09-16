@@ -17,6 +17,10 @@ slimauth 实现 SlimAuth 协议，它是带有签名校验逻辑的 SlimAPI 的�
 
 API 服务器将根据签名算法，校验 Sign 的值是否正确，并要求 Timestamp 在允许的误差范围内（默认为 300 秒）。
 
+特别的，当不方便定制请求头时，也可以将 Authorization 头的值，放在 URL 的 ~auth 参数上（记得 urlEncode ）。
+~auth 参数不参与签名计算。如果同时提供参数和请求头，则只读取请求头。
+此功能特别适用于 JSONP 请求（ SlimAPI 的功能之一），因为其不能定制 HTTP 头。
+
 # 签名算法
 
 字符集统一使用 UTF-8 。签名使用 HMAC-SHA256 算法，通过 secret 对待签名串进行哈希计算得到。待签名串根据请求的内容生成，格式为：
@@ -29,22 +33,25 @@ API 服务器将根据签名算法，校验 Sign 的值是否正确，并要求 
 	END  (constant)
 
 每个部分间用换行符（\n）分割，各部分的值为：
-  - TIMESTAMP 是生成签名时的 UNIX 时间戳，需和 Authorization 头里的 Timestamp 参数值一样。
-  - METHOD 是 HTTP 请求的 METHOD ，如 GET/POST/PUT 。
-  - PATH 请求的路径，没有路径部分时，使用“/”。
+ 1. TIMESTAMP 是生成签名时的 UNIX 时间戳，需和 Authorization 头里的 Timestamp 参数值一样。
+ 2. METHOD 是 HTTP 请求的 METHOD ，如 GET/POST/PUT 。
+ 3. PATH 请求的路径，没有路径部分时，使用“/”。
     比如请求地址是“http://temp.org/the/path/”则路径为“/the/path/”；
     地址是“http://temp.org/”或“http://temp.org”，路径均为“/”。
-  - QUERY 是 URL 的 query string 部分拼接后的值。
+ 4. QUERY 是 URL 的 query string 部分拼接后的值。
     先按参数名称的 UTF-8 字节顺序升序，将参数排列好，需使用稳定的排序算法，这样若有同名参数，其顺序不会被打乱；
     然后排序后的参数的值紧密拼接起来（无分隔符）；
     若一个参数没有值，如“?a=&b=2”或“?a&b=2”中的“a”，则用参数名称代替值拼入。
     没有 query string 时，整个 QUERY 部分使用一个空字符串。
-    注意字节顺序不是字典顺序，比如在字节顺序下，英文大写字母在小写字母前面。
-  - BODY 若是 application/x-www-form-urlencoded 请求，则处理方式同 QUERY 。
+ 5. BODY 若是 application/x-www-form-urlencoded 请求，则处理方式同 QUERY 。
     若是 application/json 请求，则为 JSON 原文，和 BODY 上送的一致，不做任何修改。
     GET 请求时此部分省略（包含换行符均省略）。
     不支持其他类型的请求。
-  - 最后一行固定是“END”三个字符，末尾没有空行。
+ 6. 最后一行固定是“END”三个字符，末尾没有空行。
+
+注意：
+  - UTF-8 字节顺序不是字典顺序，字节顺序下，英文大写字母在小写字母前面，比如 X 排序在 a 前面。
+  - 如果在 URL 上使用 ~auth 参数，此参数不参与签名计算。
 
 # 例子1 - 参数的排序规则
 

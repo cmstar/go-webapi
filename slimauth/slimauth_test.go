@@ -251,7 +251,7 @@ func TestSlimAuthApiHandler_ok(t *testing.T) {
 		testRequest(t, r, `{"Code":0,"Message":"","Data":-1}`)
 	})
 
-	t.Run("GetKey", func(t *testing.T) {
+	t.Run("GetKeyViaAuthInQuery", func(t *testing.T) {
 		/*
 			data to sign:
 				1661934251
@@ -268,9 +268,9 @@ func TestSlimAuthApiHandler_ok(t *testing.T) {
 			Timestamp: _timestamp,
 		})
 
-		r, _ := http.NewRequest("POST", s.URL+"?GetKey", strings.NewReader(`{}`))
+		uri := s.URL + "?GetKey&~auth=" + url.QueryEscape(auth)
+		r, _ := http.NewRequest("POST", uri, strings.NewReader(`{}`))
 		r.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeJson)
-		r.Header.Set(HttpHeaderAuthorization, auth)
 
 		testRequest(t, r, `{"Code":0,"Message":"","Data":"key"}`)
 	})

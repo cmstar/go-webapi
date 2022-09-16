@@ -56,7 +56,7 @@ func BuildAuthorizationHeader(auth Authorization) string {
 	return res
 }
 
-// ParseAuthorizationHeader 解析 Authorization 头。
+// ParseAuthorizationHeader 解析 Authorization 头。当没有 Authorization 头时，尝试读取 URL 上的 ~auth 参数。
 //
 // 格式为：
 //
@@ -70,9 +70,13 @@ func BuildAuthorizationHeader(auth Authorization) string {
 func ParseAuthorizationHeader(r *http.Request, authScheme string) (Authorization, error) {
 	auth := Authorization{}
 
+	// 先 Authorization ，后 ~auth 参数。
 	headers, ok := r.Header[HttpHeaderAuthorization]
 	if !ok {
-		return auth, fmt.Errorf("missing the Authorization header")
+		headers, ok = r.URL.Query()[_metaParamAuth]
+		if !ok {
+			return auth, fmt.Errorf("missing the Authorization header")
+		}
 	}
 
 	if len(headers) > 1 {
@@ -218,9 +222,12 @@ func Sign(r *http.Request, rewindBody bool, secret string, timestamp int64) Sign
 //     然后排序后的参数的值紧密拼接起来（无分隔符）；
 //     若一个参数没有值，如“?a=&b=2”或“?a&b=2”中的“a”，则用参数名称代替值拼入。
 //     没有 query string 时，整个 QUERY 部分使用一个空字符串。
-//     注意字节顺序不是字典顺序，比如在字节顺序下，英文大写字母在小写字母前面。
 //   - BODY 若是表单类型，则处理方式同 QUERY ；若是 JSON 请求，则为 JSON 原文。 GET 请求时此部分省略（包含换行符）。
 //   - 最后一行固定是“END”。
+//
+// 注意：
+// - UTF-8 字节顺序不是字典顺序，字节顺序下，英文大写字母在小写字母前面，比如 X 排序在 a 前面。
+//   - 如果在 URL 上使用 ~auth 参数，此参数不参与签名计算。
 func buildDataToSign(r *http.Request, rewindBody bool, timestamp int64) ([]byte, SignResultType, error) {
 	buf := new(bytes.Buffer)
 
@@ -241,7 +248,7 @@ func buildDataToSign(r *http.Request, rewindBody bool, timestamp int64) ([]byte,
 	buf.WriteRune('\n')
 
 	// QUERY
-	appendQueryWithNewLine(buf, r.URL.Query())
+	appendQueryWithNewLine(buf, true, r.URL.Query())
 
 	// BODY
 	if r.Method == "POST" || r.Method == "PUT" || r.Method == "PATCH" {
@@ -276,7 +283,7 @@ func buildDataToSign(r *http.Request, rewindBody bool, timestamp int64) ([]byte,
 			if err != nil {
 				return nil, SignResultType_InvalidRequestBody, err
 			}
-			appendQueryWithNewLine(buf, values)
+			appendQueryWithNewLine(buf, false, values)
 
 		case webapi.ContentTypeJson:
 			buf.Write(body)
@@ -294,7 +301,7 @@ func buildDataToSign(r *http.Request, rewindBody bool, timestamp int64) ([]byte,
 	return buf.Bytes(), SignResultType_OK, nil
 }
 
-func appendQueryWithNewLine(buf *bytes.Buffer, query url.Values) {
+func appendQueryWithNewLine(buf *bytes.Buffer, fromUrl bool, query url.Values) {
 	keys := make([]string, 0, len(query))
 	for k := range query {
 		keys = append(keys, k)
@@ -302,6 +309,10 @@ func appendQueryWithNewLine(buf *bytes.Buffer, query url.Values) {
 	sort.Stable(sort.StringSlice(keys))
 
 	for _, k := range keys {
+		if fromUrl && k == _metaParamAuth {
+			continue
+		}
+
 		for _, v := range query[k] {
 			if v == "" {
 				buf.WriteString(k)
