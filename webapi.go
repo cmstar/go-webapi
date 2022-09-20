@@ -265,7 +265,7 @@ func CreateHandlerFunc(handler ApiHandler, logFinder logx.LogFinder) http.Handle
 }
 
 func handleRequest(state *ApiState, handler ApiHandler, logFinder logx.LogFinder) {
-	defer handlerPanic(state, handler, logFinder)
+	defer handlePanic(state, handler, logFinder)
 
 	handler.FillUserHost(state)
 	handler.FillMethod(state)
@@ -292,13 +292,13 @@ func handleRequest(state *ApiState, handler ApiHandler, logFinder logx.LogFinder
 }
 
 func handleResponse(state *ApiState, handler ApiHandler, logFinder logx.LogFinder) bool {
-	defer handlerPanic(state, handler, logFinder)
+	defer handlePanic(state, handler, logFinder)
 	handler.BuildResponse(state)
 	handler.WriteResponse(state)
 	return true
 }
 
-func handlerPanic(state *ApiState, handler ApiHandler, logFinder logx.LogFinder) {
+func handlePanic(state *ApiState, handler ApiHandler, logFinder logx.LogFinder) {
 	r := recover()
 	if r == nil {
 		return
