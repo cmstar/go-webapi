@@ -131,6 +131,14 @@ type ApiNameResolver interface {
 	FillMethod(state *ApiState)
 }
 
+// ApiNameResolverFunc 用于将函数适配到 [ApiNameResolver] 。
+type ApiNameResolverFunc func(state *ApiState)
+
+// FillMethod 实现 [ApiNameResolver.FillMethod] 。
+func (f ApiNameResolverFunc) FillMethod(state *ApiState) {
+	f(state)
+}
+
 // ApiUserHostResolver 用于获取发起 HTTP 请求的客户端 IP 地址。
 // 一个请求可能经过多次代理转发，原始地址通常需要从特定 HTTP 头获取，比如 X-Forwarded-For 。
 type ApiUserHostResolver interface {
@@ -141,11 +149,27 @@ type ApiUserHostResolver interface {
 	FillUserHost(state *ApiState)
 }
 
+// ApiUserHostResolverFunc 用于将函数适配到 [ApiUserHostResolver] 。
+type ApiUserHostResolverFunc func(state *ApiState)
+
+// FillUserHost 实现 [ApiUserHostResolver.FillUserHost] 。
+func (f ApiUserHostResolverFunc) FillUserHost(state *ApiState) {
+	f(state)
+}
+
 // ApiDecoder 用于构建调用方法的参数表。
 type ApiDecoder interface {
 	// Decode 从 HTTP 请求中，构建用于调用 ApiState.Method 的参数，并填入 ApiState.Args 。
 	// 若参数转换失败，填写 ApiState.Error ，将跳过 ApiMethodCaller 的执行。
 	Decode(state *ApiState)
+}
+
+// ApiDecoderFunc 用于将函数适配到 [ApiDecoder] 。
+type ApiDecoderFunc func(state *ApiState)
+
+// Decode 实现 [ApiDecoder.Decode] 。
+func (f ApiDecoderFunc) Decode(state *ApiState) {
+	f(state)
 }
 
 // ApiMethodCaller 用于调用特定的方法。
@@ -155,10 +179,26 @@ type ApiMethodCaller interface {
 	Call(state *ApiState)
 }
 
+// ApiMethodCallerFunc 用于将函数适配到 [ApiMethodCaller] 。
+type ApiMethodCallerFunc func(state *ApiState)
+
+// Call 实现 [ApiMethodCaller.Call] 。
+func (f ApiMethodCallerFunc) Call(state *ApiState) {
+	f(state)
+}
+
 // ApiResponseBuilder 处理 ApiDecoder 和 ApiMethodCaller 执行过程中产生的错误。
 type ApiResponseBuilder interface {
 	// BuildResponse 根据 ApiState.Data 和 ApiState.Error ，填写 ApiState.Response 。
 	BuildResponse(state *ApiState)
+}
+
+// ApiResponseBuilderFunc 用于将函数适配到 [ApiResponseBuilder] 。
+type ApiResponseBuilderFunc func(state *ApiState)
+
+// BuildResponse 实现 [ApiResponseBuilder.BuildResponse] 。
+func (f ApiResponseBuilderFunc) BuildResponse(state *ApiState) {
+	f(state)
 }
 
 // ApiResponseWriter 处理 ApiMethodCaller 的处理结果，获得实际需要返回的数据，填入 Response* （以 Response 开头）字段。
@@ -169,11 +209,27 @@ type ApiResponseWriter interface {
 	WriteResponse(state *ApiState)
 }
 
+// ApiResponseWriterFunc 用于将函数适配到 [ApiResponseWriter] 。
+type ApiResponseWriterFunc func(state *ApiState)
+
+// WriteResponse 实现 [ApiResponseWriter.WriteResponse] 。
+func (f ApiResponseWriterFunc) WriteResponse(state *ApiState) {
+	f(state)
+}
+
 // ApiLogger 在 ApiResponseWriter.WriteResponse 被调用后，生成日志。
 type ApiLogger interface {
 	// Log 根据 ApiState 的内容生成日志，日志由 ApiState.Logger 接收。
 	// 若 ApiState.Logger 为 nil ，则不生成日志。
 	Log(state *ApiState)
+}
+
+// ApiLoggerFunc 用于将函数适配到 [ApiLogger] 。
+type ApiLoggerFunc func(state *ApiState)
+
+// Log 实现 [ApiLogger.Log] 。
+func (f ApiLoggerFunc) Log(state *ApiState) {
+	f(state)
 }
 
 // CreateHandlerFunc 返回一个封装了给定的 ApiHandler 的 http.HandlerFunc 。
