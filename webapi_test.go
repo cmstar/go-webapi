@@ -29,9 +29,17 @@ func (emptyApiMethodRegister) GetMethod(name string) (method ApiMethod, ok bool)
 	}, true
 }
 
-func createHandlerFuncForTest(w *ApiHandlerWrapper) http.HandlerFunc {
-	w.HttpMethods = []string{"GET"}
-	w.ApiMethodRegister = emptyApiMethodRegister{}
+// 若 w 的字段没有初始化，则对字段赋默认值；若字段有值，则保留原值。
+// 用于创建一个测试用的简单的 ApiHandler ，并测试各个字段的功能。
+// 返回 w 自身。
+func setupApiHandlerWrapper(w *ApiHandlerWrapper) *ApiHandlerWrapper {
+	if w.HttpMethods == nil {
+		w.HttpMethods = []string{"GET"}
+	}
+
+	if w.ApiMethodRegister == nil {
+		w.ApiMethodRegister = emptyApiMethodRegister{}
+	}
 
 	if w.ApiUserHostResolver == nil {
 		w.ApiUserHostResolver = ApiUserHostResolverFunc(func(state *ApiState) {
@@ -78,6 +86,11 @@ func createHandlerFuncForTest(w *ApiHandlerWrapper) http.HandlerFunc {
 		})
 	}
 
+	return w
+}
+
+func createHandlerFuncForTest(w *ApiHandlerWrapper) http.HandlerFunc {
+	setupApiHandlerWrapper(w)
 	handlerFunc := CreateHandlerFunc(w, logx.DefaultManager)
 	return handlerFunc
 }
