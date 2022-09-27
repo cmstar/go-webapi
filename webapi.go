@@ -255,9 +255,12 @@ func CreateHandlerFunc(handler ApiHandler, logFinder logx.LogFinder) http.Handle
 		}
 
 		w.Header().Set(string(HttpHeaderContentType), string(state.ResponseContentType))
-		_, err := io.Copy(w, state.ResponseBody)
-		if err != nil {
-			PanicApiError(state, err, "write response body")
+
+		if state.ResponseBody != nil {
+			_, err := io.Copy(w, state.ResponseBody)
+			if err != nil {
+				PanicApiError(state, err, "write response body")
+			}
 		}
 
 		handler.Log(state)

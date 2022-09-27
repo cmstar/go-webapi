@@ -65,7 +65,7 @@ type ApiState struct {
 	// Response 记录 WebAPI 返回的结果的抽象结构。
 	Response *ApiResponse[any]
 
-	// ResponseBody 提供实际返回的 HTTP body 的数据。
+	// ResponseBody 提供实际返回的 HTTP body 的数据。若为 nil ，则 HTTP 没有 body 。
 	ResponseBody io.Reader
 
 	// ResponseContentType 对应为返回的 HTTP 的 Content-Type 头的值。
