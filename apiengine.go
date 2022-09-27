@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-// ApiEngine 是一个 http.Handler 。表示一个抽象的 HTTP 服务器，基于 ApiHandler 注册和管理 WebAPI 。
+// ApiEngine 是一个 [http.Handler] 。表示一个抽象的 HTTP 服务器，基于 [ApiHandler] 注册和管理 WebAPI 。
 type ApiEngine struct {
 	router chi.Router
 }
@@ -38,7 +38,6 @@ func (engine *ApiEngine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // 返回 ApiSetup ，用于向 ApiHandler 注册 API 方法。
 //
 // path 为相对路径，以 / 开头。参考 https://github.com/go-chi/chi
-//
 func (engine *ApiEngine) Handle(path string, handler ApiHandler, logFinder logx.LogFinder) ApiSetup {
 	handlerFunc := CreateHandlerFunc(handler, logFinder)
 
@@ -69,4 +68,49 @@ func (engine *ApiEngine) Handle(path string, handler ApiHandler, logFinder logx.
 	}
 
 	return ApiSetup{engine, handler}
+}
+
+// HandleGet 调用 [chi.Router.Get] 。
+func (engine *ApiEngine) HandleGet(path string, handlerFunc http.HandlerFunc) {
+	engine.router.Get(path, handlerFunc)
+}
+
+// HandlePost 调用 [chi.Router.Post] 。
+func (engine *ApiEngine) HandlePost(path string, handlerFunc http.HandlerFunc) {
+	engine.router.Post(path, handlerFunc)
+}
+
+// HandlePut 调用 [chi.Router.Put] 。
+func (engine *ApiEngine) HandlePut(path string, handlerFunc http.HandlerFunc) {
+	engine.router.Put(path, handlerFunc)
+}
+
+// HandleDelete 调用 [chi.Router.Delete] 。
+func (engine *ApiEngine) HandleDelete(path string, handlerFunc http.HandlerFunc) {
+	engine.router.Delete(path, handlerFunc)
+}
+
+// HandlePatch 调用 [chi.Router.Patch] 。
+func (engine *ApiEngine) HandlePatch(path string, handlerFunc http.HandlerFunc) {
+	engine.router.Patch(path, handlerFunc)
+}
+
+// HandleHead 调用 [chi.Router.Head] 。
+func (engine *ApiEngine) HandleHead(path string, handlerFunc http.HandlerFunc) {
+	engine.router.Head(path, handlerFunc)
+}
+
+// HandleTrace 调用 [chi.Router.Trace] 。
+func (engine *ApiEngine) HandleTrace(path string, handlerFunc http.HandlerFunc) {
+	engine.router.Trace(path, handlerFunc)
+}
+
+// HandleConnect 调用 [chi.Router.Connect] 。
+func (engine *ApiEngine) HandleConnect(path string, handlerFunc http.HandlerFunc) {
+	engine.router.Connect(path, handlerFunc)
+}
+
+// HandleOptions 调用 [chi.Router.Options] 。
+func (engine *ApiEngine) HandleOptions(path string, handlerFunc http.HandlerFunc) {
+	engine.router.Options(path, handlerFunc)
 }
