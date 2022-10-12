@@ -14,7 +14,11 @@ import (
 //
 // TParam 是输入参数的类型； TData 对应输出的 [webapi.ApiResponse.Data] 。
 type SlimApiInvoker[TParam, TData any] struct {
-	Uri string // 目标 URL 。
+	// 目标 URL 。
+	Uri string
+
+	// 若不为 nil ，则在 [http.Client.Do] 之前，调用此函数对当前请求进行处理。
+	RequestSetup func(r *http.Request) error
 }
 
 // SlimApiInvoker 创建一个 [SlimApiInvoker] 实例。
@@ -54,6 +58,14 @@ func (x SlimApiInvoker[TParam, TData]) DoRaw(params TParam) (webapi.ApiResponse[
 	}
 
 	request.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeJson)
+	if x.RequestSetup != nil {
+		err = x.RequestSetup(request)
+		if err != nil {
+			var zero webapi.ApiResponse[TData]
+			return zero, err
+		}
+	}
+
 	response, err := new(http.Client).Do(request)
 	if err != nil {
 		var zero webapi.ApiResponse[TData]

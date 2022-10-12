@@ -76,17 +76,19 @@ func (methodProvider) GetKey(auth *Authorization) string {
 	return auth.Key
 }
 
+func finderForTest(accessKey string) string {
+	switch accessKey {
+	case _key:
+		return _secret
+
+	default:
+		return ""
+	}
+}
+
 // op.SecretFinder 不需要给定，会自动赋值。
 func newTestServer(op SlimAuthApiHandlerOption) *httptest.Server {
-	op.SecretFinder = func(accessKey string) string {
-		switch accessKey {
-		case _key:
-			return _secret
-
-		default:
-			return ""
-		}
-	}
+	op.SecretFinder = finderForTest
 
 	handler := NewSlimAuthApiHandler(op)
 	handler.RegisterMethods(methodProvider{})
