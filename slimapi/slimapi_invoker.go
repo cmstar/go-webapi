@@ -14,11 +14,15 @@ import (
 //
 // TParam 是输入参数的类型； TData 对应输出的 [webapi.ApiResponse.Data] 。
 type SlimApiInvoker[TParam, TData any] struct {
-	Uri string
+	Uri string // 目标 URL 。
 }
 
 // SlimApiInvoker 创建一个 [SlimApiInvoker] 实例。
 func NewSlimApiInvoker[TParam, TData any](uri string) *SlimApiInvoker[TParam, TData] {
+	if uri == "" {
+		panic("uri must be provided")
+	}
+
 	return &SlimApiInvoker[TParam, TData]{
 		Uri: uri,
 	}
