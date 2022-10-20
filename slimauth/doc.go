@@ -28,8 +28,8 @@ API 服务器将根据签名算法，校验 Sign 的值是否正确，并要求 
 	TIMESTAMP
 	METHOD
 	PATH
-	QUERY
-	BODY (optional)
+	QUERY_VALUES
+	BODY_VALUES (optional)
 	END  (constant)
 
 每个部分间用换行符（\n）分割，各部分的值为：
@@ -38,12 +38,12 @@ API 服务器将根据签名算法，校验 Sign 的值是否正确，并要求 
  3. PATH 请求的路径，没有路径部分时，使用“/”。
     比如请求地址是“http://temp.org/the/path/”则路径为“/the/path/”；
     地址是“http://temp.org/”或“http://temp.org”，路径均为“/”。
- 4. QUERY 是 URL 的 query string 部分拼接后的值。
+ 4. QUERY_VALUES 是 URL 的 query string 部分拼接后的值。
     先按参数名称的 UTF-8 字节顺序升序，将参数排列好，需使用稳定的排序算法，这样若有同名参数，其顺序不会被打乱；
     然后排序后的参数的值紧密拼接起来（无分隔符）；
     若一个参数没有值，如“?a=&b=2”或“?a&b=2”中的“a”，则用参数名称代替值拼入。
     没有 query string 时，整个 QUERY 部分使用一个空字符串。
- 5. BODY 若是 application/x-www-form-urlencoded 请求，则处理方式同 QUERY 。
+ 5. BODY_VALUES 若是 application/x-www-form-urlencoded 请求，则处理方式同 QUERY 。
     若是 application/json 请求，则为 JSON 原文，和 BODY 上送的一致，不做任何修改。
     GET 请求时此部分省略（包含换行符均省略）。
     不支持其他类型的请求。
@@ -55,21 +55,32 @@ API 服务器将根据签名算法，校验 Sign 的值是否正确，并要求 
 
 # 例子1 - 参数的排序规则
 
-示例中，时间戳均为 1662439087 ， Key 为 my_key ， secret 为 my_secret 。
+当前示例及其后的示例中，时间戳均固定为 1662439087 ，使用的 Key 的值为 my_key ， secret 的值为 my_secret 。
 
-请求：
+待签名的请求为：
 
 	POST http://temp.org/my/path?a&c=3&b=2&z=4&X=%E4%B8%AD%E6%96%87&a=1&b=
 	Content-Type: application/x-www-form-urlencoded
 
 	p1=11&p3=33&p2=22
 
-签名步骤：
- 1. QUERY 部分参数为 [a, c, b, z, X, a, b] ，将参数根据名称按 UTF-8 字节顺序升序排列，并且使用稳定排序算法。
+这是请求的 HTTP 报文的内容（除去 HTTP/1.1 部分）。
+  - 请求的 QUERY 部分为 a&c=3&b=2&z=4&X=%E4%B8%AD%E6%96%87&a=1&b= ，参数使用百分号转义（Percent-encoding）过， X 参数原始值为“中文”。
+  - 请求的 BODY 部分是 p1=11&p3=33&p2=22 。
+
+获取待签名串的步骤：
+ 1. 拼接 TIMESTAMP ，值为 1662439087 。
+ 2. 拼接 METHOD ，值为 POST 。
+ 3. 拼接 PATH ，即 http://temp.org/my/path 中的 /my/path 。
+ 4. 计算并追加 QUERY 部分。见下文描述。
+ 5. 计算并追加 BODY 部分。由于是 application/x-www-form-urlencoded 的请求， BODY 部分的处理和 QUERY 规则一样，结果为： "112233" 。
+ 6. 追加最后一行，固定值为 END 。
+
+QUERY 部分的计算步骤为：
+ 1. 得到参数表 [a, c, b, z, X, a, b] ，将参数根据名称按 UTF-8 字节顺序升序排列，并且使用稳定排序算法。
     排列后为 [X, a, a, b, b, c, z] ，其中两个“a”参数和“b”参数的顺序需和 URL 中出现的顺序一致。
- 2. 排序后的参数的原始值（没有 urlEncode 的）为：[中文, , 1, 2, , 3, 4] ，其中有两个空白值，对应没有值的第一个“a”参数和第二个“b”参数。
-    按顺序将值拼接起来，若参数没有值，则使用参数名称替代，得到： "中文a12b34" 。
- 3. 由于是 application/x-www-form-urlencoded 的请求， BODY 部分的处理和 QUERY 规则一样，结果为： "112233" 。
+ 2. 按排序后的参数顺序，得到参数的原始值为：[中文, , 1, 2, , 3, 4] ，其中有两个空白值（ X 和 b 参数），对应没有值的第一个“a”参数和第二个“b”参数。
+ 3. 按顺序将值拼接起来，若参数没有值，则使用参数名称替代，得到： "中文a12b34" 。
 
 最终待签名串为：
 
@@ -82,7 +93,7 @@ API 服务器将根据签名算法，校验 Sign 的值是否正确，并要求 
 
 通过 my_secret 计算 HMAC-SHA256 值为： b3baa63839877585cc05495810fb10267317df2fceda2eddcb92a740f78d1ba5
 
-拼接 Authorization 头后，最终请求为：
+拼接得到 Authorization 头，追加到请求头，最终请求为：
 
 	POST http://temp.org/my/path?a&c=3&b=2&z=4&X=%E4%B8%AD%E6%96%87&a=1&b=
 	Content-Type: application/x-www-form-urlencoded
@@ -115,7 +126,9 @@ API 服务器将根据签名算法，校验 Sign 的值是否正确，并要求 
 
 	{"key":"value"}
 
-待签名串为：
+JSON 请求的 BODY 部分不用额外处理，直接原样拼接到待待签名串。注意：如果 JSON 中本身有换行，也原样拼接，不需要额外处理。
+
+得到待签名串为：
 
 	1662439087
 	POST
