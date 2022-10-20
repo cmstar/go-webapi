@@ -8,21 +8,12 @@ type LogSetup interface {
 	Setup(state *ApiState)
 }
 
-// LogSetupFunc 是 [LogSetup.Setup] 的函数签名。
+// LogSetupFunc 用于将函数 [LogSetup.Setup] 。
 type LogSetupFunc func(state *ApiState)
 
-type logSetupWrap struct {
-	f LogSetupFunc
-}
-
-// ToLogSetup 将 [LogSetupFunc] 包装成 [LogSetup] 。
-func ToLogSetup(f LogSetupFunc) LogSetup {
-	return logSetupWrap{f}
-}
-
 // DecodeArg implements [ArgumentDecoder.DecodeArg].
-func (x logSetupWrap) Setup(state *ApiState) {
-	x.f(state)
+func (f LogSetupFunc) Setup(state *ApiState) {
+	f(state)
 }
 
 // LogSetupPipeline 是 [LogSetup] 组成的管道，实现 [ApiLogger] 。

@@ -14,21 +14,12 @@ type ArgumentDecoder interface {
 	DecodeArg(state *ApiState, index int, argType reflect.Type) (ok bool, v any, err error)
 }
 
-// ArgumentDecodeFunc 是 [ArgumentDecoder.DecodeArg] 的函数签名。
+// ArgumentDecodeFunc 用于将函数适配到 [ArgumentDecoder.DecodeArg] 。
 type ArgumentDecodeFunc func(state *ApiState, index int, argType reflect.Type) (ok bool, v any, err error)
 
-type argumentDecoderWrap struct {
-	f func(state *ApiState, index int, argType reflect.Type) (ok bool, v any, err error)
-}
-
-// ToArgumentDecoder 将 [ArgumentDecodeFunc] 包装成 [ArgumentDecoder] 。
-func ToArgumentDecoder(f ArgumentDecodeFunc) ArgumentDecoder {
-	return argumentDecoderWrap{f}
-}
-
 // DecodeArg implements [ArgumentDecoder.DecodeArg].
-func (x argumentDecoderWrap) DecodeArg(state *ApiState, index int, argType reflect.Type) (ok bool, v any, err error) {
-	return x.f(state, index, argType)
+func (f ArgumentDecodeFunc) DecodeArg(state *ApiState, index int, argType reflect.Type) (ok bool, v any, err error) {
+	return f(state, index, argType)
 }
 
 // ApiStateDecodeFunc 是一个 [ArgumentDecoder] ，它用于解析并赋值 [*ApiState] 。

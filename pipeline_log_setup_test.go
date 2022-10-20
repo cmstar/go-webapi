@@ -26,8 +26,8 @@ func TestLogFuncPipeline(t *testing.T) {
 		}
 
 		p := NewLogSetupPipeline(
-			ToLogSetup(f1),
-			ToLogSetup(f2),
+			LogSetupFunc(f1),
+			LogSetupFunc(f2),
 		)
 
 		logger := logxtest.NewRecorder()
@@ -44,7 +44,7 @@ func TestLogFuncPipeline(t *testing.T) {
 			state.LogMessage = append(state.LogMessage, "K", "V")
 		}
 
-		p := NewLogSetupPipeline(ToLogSetup(f1))
+		p := NewLogSetupPipeline(LogSetupFunc(f1))
 		logger := logxtest.NewRecorder()
 		p.Log(&ApiState{Logger: logger})
 

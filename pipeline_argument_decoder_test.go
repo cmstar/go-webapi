@@ -34,10 +34,10 @@ func TestDecodeFuncPipeline(t *testing.T) {
 		return true, nil, nil
 	}
 	decoder := NewArgumentDecoderPipeline(
-		ToArgumentDecoder(decodeInt),
-		ToArgumentDecoder(decodeString),
-		ToArgumentDecoder(errorOnFloat64),
-		ToArgumentDecoder(nilOnFloat32),
+		ArgumentDecodeFunc(decodeInt),
+		ArgumentDecodeFunc(decodeString),
+		ArgumentDecodeFunc(errorOnFloat64),
+		ArgumentDecodeFunc(nilOnFloat32),
 	)
 
 	run := func(fn any) *ApiState {
