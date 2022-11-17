@@ -226,7 +226,7 @@ func Sign(r *http.Request, rewindBody bool, secret string, timestamp int64) Sign
 //   - 最后一行固定是“END”。
 //
 // 注意：
-// - UTF-8 字节顺序不是字典顺序，字节顺序下，英文大写字母在小写字母前面，比如 X 排序在 a 前面。
+//   - UTF-8 字节顺序不是字典顺序，字节顺序下，英文大写字母在小写字母前面，比如 X 排序在 a 前面。
 //   - 如果在 URL 上使用 ~auth 参数，此参数不参与签名计算。
 func buildDataToSign(r *http.Request, rewindBody bool, timestamp int64) ([]byte, SignResultType, error) {
 	buf := new(bytes.Buffer)
