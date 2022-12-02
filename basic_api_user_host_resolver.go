@@ -15,28 +15,30 @@ func NewBasicApiUserHostResolver() ApiUserHostResolver {
 }
 
 func (r *basicApiUserHostResolver) FillUserHost(state *ApiState) {
-	// 在标准过程里， IP 并不需要特殊处理，注意解析 X-Forwarded-For 头即可，它已经被 chi 库处理了。
-	// 好像文档没有明确格式。一般是“IP:PORT”，而且 IPv6 下本地地址是“[::1]:port”。
+	// 在标准过程里， IP 并不需要特殊处理，注意解析 X-Forwarded-For 头即可，它已经被 chi 库处理了，
+	// 并且 X-Forwarded-For 有多段 IP 的， chi 仅保留第一段。
+	// 好像文档没有明确 RemoteAddr 的格式。一般是“IP:PORT”， IPv6 下地址是“[IP]:PORT”。
 	ip := state.RawRequest.RemoteAddr
 
-	// ipv6的本地地址表示是“::1”或“[::1]”，这里出现这样的统一转成"127.0.0.1"，以便于统计分析。
-	// 这个转换似乎有些侵入性？
-	// X-Forwarded-For 头给的 IP 可能有多段，用逗号分割，下文只取第一段，所以替换一次即可。
-	ip = strings.Replace(ip, "::1", "127.0.0.1", 1)
+	// 去掉端口部分，仅保留 IP 。
+	if strings.Contains(ip, ".") { // Is IPv4?
+		if colonIdx := strings.Index(ip, ":"); colonIdx > 0 {
+			ip = ip[:colonIdx]
+		}
+	} else { // IPv6
+		start := strings.Index(ip, "[")
+		if start < 0 {
+			goto END
+		}
 
-	// X-Forwarded-For 头给的第一个 IP 是客户端原始 IP 。
-	parts := strings.Split(ip, ",")
-	ip = parts[0]
+		end := strings.LastIndex(ip, "]")
+		if end < start {
+			goto END
+		}
 
-	// 带端口的，去掉端口。上面已经替换了“::1”，除端口外应该没有冒号了。
-	if colonIdx := strings.Index(ip, ":"); colonIdx > 0 {
-		ip = ip[:colonIdx]
+		ip = ip[start+1 : end]
 	}
 
-	// 还可能有“[]”包裹，也去掉。
-	if len(ip) > 2 && ip[0] == '[' && ip[len(ip)-1] == ']' {
-		ip = ip[1 : len(ip)-1]
-	}
-
+END:
 	state.UserHost = ip
 }

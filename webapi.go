@@ -145,7 +145,7 @@ type ApiUserHostResolver interface {
 	// FillUserHost 获取发起 HTTP 请求的客户端 IP 地址，并填入 ApiState.UserHost 。
 	//
 	// HTTP 服务经常通过反向代理访问，可能转好几层，需要通过如 X-Forwarded-For 头获取客户端 IP 。
-	//
+	// 效果类似于 [http.Request.RemoteAddr] ，但不带端口部分。 IPv6 地址外层的“[]”也会被去掉（如果有）。
 	FillUserHost(state *ApiState)
 }
 

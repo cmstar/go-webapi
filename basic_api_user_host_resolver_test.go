@@ -21,15 +21,17 @@ func TestApiUserHostResolver(t *testing.T) {
 	}
 
 	testOne("", "")
-	testOne("::1", "127.0.0.1")
-	testOne("[1.2.3.4]", "1.2.3.4")
-	testOne("[::1]", "127.0.0.1")
-	testOne("[::1]:1234", "127.0.0.1")
-	testOne("[1.2.3.4]:1234", "1.2.3.4")
+	testOne("1.2.3.4", "1.2.3.4")
+	testOne("::1", "::1")
+	testOne("[::1]", "::1")
+	testOne("[::1]:1234", "::1")
+	testOne("[1:2::3:4]:1234", "1:2::3:4")
 
 	// Bad IPs.
 	testOne(":", ":")
 	testOne("::", "::")
 	testOne("[", "[")
+	testOne(":[", ":[")
 	testOne("]", "]")
+	testOne("100", "100")
 }
