@@ -22,6 +22,7 @@ func TestApiUserHostResolver(t *testing.T) {
 
 	testOne("", "")
 	testOne("1.2.3.4", "1.2.3.4")
+	testOne("1.2.3.4:666", "1.2.3.4")
 	testOne("::1", "::1")
 	testOne("[::1]", "::1")
 	testOne("[::1]:1234", "::1")
