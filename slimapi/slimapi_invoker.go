@@ -3,6 +3,7 @@ package slimapi
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -45,13 +46,19 @@ func (x SlimApiInvoker[TParam, TData]) MustDoRaw(params TParam) webapi.ApiRespon
 //
 // 请求总是以 Content-Type: application/json 方式发送， params 是请求的参数，需能够被 JSON 序列化。
 func (x SlimApiInvoker[TParam, TData]) DoRaw(params TParam) (res webapi.ApiResponse[TData], err error) {
+	wrapErr := func(cause error) error {
+		return fmt.Errorf(`request "%s": %w`, x.Uri, err)
+	}
+
 	in, err := json.Marshal(params)
 	if err != nil {
+		err = wrapErr(err)
 		return
 	}
 
 	request, err := http.NewRequest("POST", x.Uri, bytes.NewBuffer(in))
 	if err != nil {
+		err = wrapErr(err)
 		return
 	}
 
@@ -59,21 +66,29 @@ func (x SlimApiInvoker[TParam, TData]) DoRaw(params TParam) (res webapi.ApiRespo
 	if x.RequestSetup != nil {
 		err = x.RequestSetup(request)
 		if err != nil {
+			err = wrapErr(err)
 			return
 		}
 	}
 
 	response, err := new(http.Client).Do(request)
 	if err != nil {
+		err = wrapErr(err)
 		return
 	}
 
 	out, err := io.ReadAll(response.Body)
 	if err != nil {
+		err = wrapErr(err)
 		return
 	}
 
 	err = json.Unmarshal(out, &res)
+	if err != nil {
+		err = wrapErr(err)
+		return
+	}
+
 	return
 }
 
@@ -95,7 +110,8 @@ func (x SlimApiInvoker[TParam, TData]) Do(params TParam) (data TData, err error)
 	}
 
 	if res.Code != 0 {
-		err = errx.NewBizError(res.Code, res.Message, nil)
+		cause := fmt.Errorf(`request "%s": (%d) %s`, x.Uri, res.Code, res.Message)
+		err = errx.NewBizError(res.Code, res.Message, cause)
 		return
 	}
 

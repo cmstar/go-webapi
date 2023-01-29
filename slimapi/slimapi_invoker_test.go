@@ -36,12 +36,15 @@ func TestSlimApiInvoker_Do(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, 999, bizErr.Code())
 		require.Equal(t, "", result)
+		require.NotNil(t, bizErr.Cause())
+		require.Regexp(t, `request ".+?/ShowError": \(999\)`, bizErr.Cause().Error())
 	})
 
 	t.Run("bad", func(t *testing.T) {
 		invoker := NewSlimApiInvoker[int, int]("bad-url")
 		_, err := invoker.Do(1)
 		require.Error(t, err)
+		require.Regexp(t, `request "bad-url":`, err.Error())
 	})
 }
 
