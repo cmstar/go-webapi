@@ -44,48 +44,37 @@ func (x SlimApiInvoker[TParam, TData]) MustDoRaw(params TParam) webapi.ApiRespon
 // DoRaw 执行请求，并返回原始的 [webapi.ApiResponse] ，不会判断对应的 Code 值。
 //
 // 请求总是以 Content-Type: application/json 方式发送， params 是请求的参数，需能够被 JSON 序列化。
-func (x SlimApiInvoker[TParam, TData]) DoRaw(params TParam) (webapi.ApiResponse[TData], error) {
+func (x SlimApiInvoker[TParam, TData]) DoRaw(params TParam) (res webapi.ApiResponse[TData], err error) {
 	in, err := json.Marshal(params)
 	if err != nil {
-		var zero webapi.ApiResponse[TData]
-		return zero, err
+		return
 	}
 
 	request, err := http.NewRequest("POST", x.Uri, bytes.NewBuffer(in))
 	if err != nil {
-		var zero webapi.ApiResponse[TData]
-		return zero, err
+		return
 	}
 
 	request.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeJson)
 	if x.RequestSetup != nil {
 		err = x.RequestSetup(request)
 		if err != nil {
-			var zero webapi.ApiResponse[TData]
-			return zero, err
+			return
 		}
 	}
 
 	response, err := new(http.Client).Do(request)
 	if err != nil {
-		var zero webapi.ApiResponse[TData]
-		return zero, err
+		return
 	}
 
 	out, err := io.ReadAll(response.Body)
 	if err != nil {
-		var zero webapi.ApiResponse[TData]
-		return zero, err
+		return
 	}
 
-	var resp webapi.ApiResponse[TData]
-	err = json.Unmarshal(out, &resp)
-	if err != nil {
-		var zero webapi.ApiResponse[TData]
-		return zero, err
-	}
-
-	return resp, nil
+	err = json.Unmarshal(out, &res)
+	return
 }
 
 // MustDo 是 [Do] 的 panic 版本。
@@ -99,17 +88,17 @@ func (x SlimApiInvoker[TParam, TData]) MustDo(params TParam) TData {
 
 // Do 执行请求并在 [webapi.ApiResponse.Code] 为 0 时返回 [webapi.ApiResponse.Data] 。
 // 若 Code 不是 0 ，则返回 [errx.BizError] 。
-func (x SlimApiInvoker[TParam, TData]) Do(params TParam) (TData, error) {
+func (x SlimApiInvoker[TParam, TData]) Do(params TParam) (data TData, err error) {
 	res, err := x.DoRaw(params)
 	if err != nil {
-		var zero TData
-		return zero, err
+		return
 	}
 
 	if res.Code != 0 {
-		var zero TData
-		return zero, errx.NewBizError(res.Code, res.Message, nil)
+		err = errx.NewBizError(res.Code, res.Message, nil)
+		return
 	}
 
-	return res.Data, nil
+	data = res.Data
+	return
 }
