@@ -43,7 +43,8 @@ type ApiHandler interface {
 	// 名称可以是任意值，包括空字符串。但应尽量给定容易识别的名称。
 	Name() string
 
-	// SupportedHttpMethods 返回当前 ApiHandler 支持的 HTTP 方法。如 GET 、 POST 、 PUT 、 DELETE 等。
+	// SupportedHttpMethods 返回当前 ApiHandler 支持的 HTTP 方法。
+	// 如 GET 、 POST 、 PUT 、 DELETE 等，大小写不敏感。
 	SupportedHttpMethods() []string
 }
 

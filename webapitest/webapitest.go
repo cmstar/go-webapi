@@ -3,6 +3,7 @@ package webapitest
 
 import (
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 
@@ -26,7 +27,7 @@ type NewStateSetup struct {
 func NewStateForTest(apiHandler webapi.ApiHandler, uri string, setup NewStateSetup) (*webapi.ApiState, *httptest.ResponseRecorder) {
 	httpMethod := setup.HttpMethod
 	if httpMethod == "" {
-		httpMethod = "GET"
+		httpMethod = http.MethodGet
 	}
 
 	req := httptest.NewRequest(httpMethod, uri, nil)

@@ -70,7 +70,7 @@ func TestFiles(t *testing.T) {
 
 	buildState := func(buf *bytes.Buffer, w *multipart.Writer) *webapi.ApiState {
 		state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, "/", webapitest.NewStateSetup{
-			HttpMethod:  "POST",
+			HttpMethod:  http.MethodPost,
 			ContentType: w.FormDataContentType(),
 			BodyReader:  buf,
 		})

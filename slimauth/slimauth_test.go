@@ -52,14 +52,14 @@ func newRequest(baseUrl, pathAndQuery string, typ int, body string) *http.Reques
 
 	switch typ {
 	case _requestTypeGet:
-		r.Method = "GET"
+		r.Method = http.MethodGet
 
 	case _requestTypeForm:
-		r.Method = "POST"
+		r.Method = http.MethodPost
 		r.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeForm)
 
 	case _requestTypeJson:
-		r.Method = "POST"
+		r.Method = http.MethodPost
 		r.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeJson)
 	}
 
@@ -113,38 +113,38 @@ func TestSlimAuthApiHandler_errors(t *testing.T) {
 	})
 
 	t.Run("NoMethod", func(t *testing.T) {
-		r, _ := http.NewRequest("GET", s.URL, nil)
+		r, _ := http.NewRequest(http.MethodGet, s.URL, nil)
 		testRequest(t, r, `{"Code":400,"Message":"invalid Authorization","Data":null}`)
 	})
 
 	t.Run("InvalidAuth", func(t *testing.T) {
-		r, _ := http.NewRequest("GET", s.URL+"?Plus", nil)
+		r, _ := http.NewRequest(http.MethodGet, s.URL+"?Plus", nil)
 		testRequest(t, r, `{"Code":400,"Message":"invalid Authorization","Data":null}`)
 	})
 
 	t.Run("InvalidAuthVersion", func(t *testing.T) {
-		r, _ := http.NewRequest("GET", s.URL+"?Plus", nil)
+		r, _ := http.NewRequest(http.MethodGet, s.URL+"?Plus", nil)
 		r.Header.Set(HttpHeaderAuthorization, "SLIM-AUTH Key=key, Sign=sign, Timestamp=1, Version=-100")
 
 		testRequest(t, r, `{"Code":400,"Message":"unsupported signature version","Data":null}`)
 	})
 
 	t.Run("UnknownKey", func(t *testing.T) {
-		r, _ := http.NewRequest("GET", s.URL+"?Plus", nil)
+		r, _ := http.NewRequest(http.MethodGet, s.URL+"?Plus", nil)
 		r.Header.Set(HttpHeaderAuthorization, "SLIM-AUTH Key=unknown, Sign=sign, Timestamp=1")
 
 		testRequest(t, r, `{"Code":400,"Message":"unknown key","Data":null}`)
 	})
 
 	t.Run("NoContentType", func(t *testing.T) {
-		r, _ := http.NewRequest("POST", s.URL+"?Plus", nil)
+		r, _ := http.NewRequest(http.MethodPost, s.URL+"?Plus", nil)
 		r.Header.Set(HttpHeaderAuthorization, "SLIM-AUTH Key=key, Sign=sign, Timestamp=1")
 
 		testRequest(t, r, `{"Code":400,"Message":"missing Content-Type","Data":null}`)
 	})
 
 	t.Run("UnsupportedContentType", func(t *testing.T) {
-		r, _ := http.NewRequest("POST", s.URL+"?Plus", strings.NewReader("{}"))
+		r, _ := http.NewRequest(http.MethodPost, s.URL+"?Plus", strings.NewReader("{}"))
 		r.Header.Set(HttpHeaderAuthorization, "SLIM-AUTH Key=key, Sign=sign, Timestamp=1")
 		r.Header.Set(webapi.HttpHeaderContentType, "Invalid-Content-Type")
 
@@ -152,7 +152,7 @@ func TestSlimAuthApiHandler_errors(t *testing.T) {
 	})
 
 	t.Run("InvalidForm", func(t *testing.T) {
-		r, _ := http.NewRequest("POST", s.URL+"?Plus", strings.NewReader(";=;"))
+		r, _ := http.NewRequest(http.MethodPost, s.URL+"?Plus", strings.NewReader(";=;"))
 		r.Header.Set(HttpHeaderAuthorization, "SLIM-AUTH Key=key, Sign=sign, Timestamp=1")
 		r.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeForm)
 
@@ -166,7 +166,7 @@ func TestSlimAuthApiHandler_errors(t *testing.T) {
 			Timestamp: _timestamp,
 		})
 
-		r, _ := http.NewRequest("GET", s.URL+"?Plus&x=1", nil)
+		r, _ := http.NewRequest(http.MethodGet, s.URL+"?Plus&x=1", nil)
 		r.Header.Set(HttpHeaderAuthorization, auth)
 
 		testRequest(t, r, `{"Code":400,"Message":"signature error","Data":null}`)
@@ -178,7 +178,7 @@ func TestSlimAuthApiHandler_timeChecker(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		s := newTestServer(SlimAuthApiHandlerOption{}) // 自动使用 DefaultTimeChecker 。
 
-		r, _ := http.NewRequest("GET", s.URL+"?Plus&x=1", nil)
+		r, _ := http.NewRequest(http.MethodGet, s.URL+"?Plus&x=1", nil)
 		signResult := AppendSign(r, _key, _secret, "", time.Now().Unix())
 		require.Equal(t, SignResultType_OK, signResult.Type)
 
@@ -192,7 +192,7 @@ func TestSlimAuthApiHandler_timeChecker(t *testing.T) {
 
 		timestamp := time.Now().Unix() + 1000
 
-		r, _ := http.NewRequest("GET", s.URL+"?Plus&x=1", nil)
+		r, _ := http.NewRequest(http.MethodGet, s.URL+"?Plus&x=1", nil)
 		signResult := AppendSign(r, _key, _secret, "", timestamp)
 		require.Equal(t, SignResultType_OK, signResult.Type)
 
@@ -222,7 +222,7 @@ func TestSlimAuthApiHandler_ok(t *testing.T) {
 			Timestamp: _timestamp,
 		})
 
-		r, _ := http.NewRequest("POST", s.URL+"?Plus&cc=c&AA=a&bb=.", strings.NewReader("x=11&Y=22"))
+		r, _ := http.NewRequest(http.MethodPost, s.URL+"?Plus&cc=c&AA=a&bb=.", strings.NewReader("x=11&Y=22"))
 		r.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeForm)
 		r.Header.Set(HttpHeaderAuthorization, auth)
 
@@ -246,7 +246,7 @@ func TestSlimAuthApiHandler_ok(t *testing.T) {
 			Timestamp: _timestamp,
 		})
 
-		r, _ := http.NewRequest("POST", s.URL+"?Plus", strings.NewReader(`{"x":"1","Y":-2}`))
+		r, _ := http.NewRequest(http.MethodPost, s.URL+"?Plus", strings.NewReader(`{"x":"1","Y":-2}`))
 		r.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeJson)
 		r.Header.Set(HttpHeaderAuthorization, auth)
 
@@ -271,7 +271,7 @@ func TestSlimAuthApiHandler_ok(t *testing.T) {
 		})
 
 		uri := s.URL + "?GetKey&~auth=" + url.QueryEscape(auth)
-		r, _ := http.NewRequest("POST", uri, strings.NewReader(`{}`))
+		r, _ := http.NewRequest(http.MethodPost, uri, strings.NewReader(`{}`))
 		r.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeJson)
 
 		testRequest(t, r, `{"Code":0,"Message":"","Data":"key"}`)
@@ -304,7 +304,7 @@ func TestSlimAuthApiHandler_customScheme(t *testing.T) {
 			Timestamp:  _timestamp,
 		})
 
-		r, _ := http.NewRequest("POST", s.URL+"?Plus&x=11&AA=a&y=22", strings.NewReader("c=c&b=b"))
+		r, _ := http.NewRequest(http.MethodPost, s.URL+"?Plus&x=11&AA=a&y=22", strings.NewReader("c=c&b=b"))
 		r.Header.Set(webapi.HttpHeaderContentType, webapi.ContentTypeForm)
 		r.Header.Set(HttpHeaderAuthorization, auth)
 

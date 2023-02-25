@@ -44,25 +44,25 @@ func (engine *ApiEngine) Handle(path string, handler ApiHandler, logFinder logx.
 	// 同一个 handler 需要响应不同的请求方式，把需要的都注册一遍。
 	methods := handler.SupportedHttpMethods()
 	for i := 0; i < len(methods); i++ {
-		method := strings.ToLower(methods[i])
+		method := strings.ToUpper(methods[i])
 		switch method {
-		case "get":
+		case http.MethodGet:
 			engine.router.Get(path, handlerFunc)
-		case "post":
+		case http.MethodPost:
 			engine.router.Post(path, handlerFunc)
-		case "put":
+		case http.MethodPut:
 			engine.router.Put(path, handlerFunc)
-		case "delete":
+		case http.MethodDelete:
 			engine.router.Delete(path, handlerFunc)
-		case "patch":
+		case http.MethodPatch:
 			engine.router.Patch(path, handlerFunc)
-		case "head":
+		case http.MethodHead:
 			engine.router.Head(path, handlerFunc)
-		case "trace":
+		case http.MethodTrace:
 			engine.router.Trace(path, handlerFunc)
-		case "connect":
+		case http.MethodConnect:
 			engine.router.Connect(path, handlerFunc)
-		case "options":
+		case http.MethodOptions:
 			engine.router.Options(path, handlerFunc)
 		}
 	}

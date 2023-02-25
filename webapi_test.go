@@ -34,7 +34,7 @@ func (emptyApiMethodRegister) GetMethod(name string) (method ApiMethod, ok bool)
 // 返回 w 自身。
 func setupApiHandlerWrapper(w *ApiHandlerWrapper) *ApiHandlerWrapper {
 	if w.HttpMethods == nil {
-		w.HttpMethods = []string{"GET"}
+		w.HttpMethods = []string{http.MethodGet}
 	}
 
 	if w.ApiMethodRegister == nil {

@@ -56,7 +56,7 @@ func (x SlimApiInvoker[TParam, TData]) DoRaw(params TParam) (res webapi.ApiRespo
 		return
 	}
 
-	request, err := http.NewRequest("POST", x.Uri, bytes.NewBuffer(in))
+	request, err := http.NewRequest(http.MethodPost, x.Uri, bytes.NewBuffer(in))
 	if err != nil {
 		err = wrapErr(err)
 		return

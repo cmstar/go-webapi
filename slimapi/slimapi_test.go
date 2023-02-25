@@ -3,6 +3,7 @@ package slimapi
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/cmstar/go-errx"
@@ -44,9 +45,9 @@ func DoIntegrationTest(t *testing.T, args integrationTestArgs) {
 	case webapi.ContentTypeForm:
 		fallthrough
 	case webapi.ContentTypeJson:
-		httpMethod = "POST"
+		httpMethod = http.MethodPost
 	default:
-		httpMethod = "GET"
+		httpMethod = http.MethodGet
 	}
 
 	url := "http://temp.org/" + args.requestRelativeUrl

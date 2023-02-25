@@ -1,6 +1,7 @@
 package slimapi
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/cmstar/go-conv"
@@ -74,7 +75,7 @@ func NewSlimApiHandler(name string) *webapi.ApiHandlerWrapper {
 // SupportedHttpMethods 返回 SlimAPI 支持的 HTTP 请求方法。
 // 当前支持 GET 和 POST 。
 func SupportedHttpMethods() []string {
-	return []string{"GET", "POST"}
+	return []string{http.MethodGet, http.MethodPost}
 }
 
 func setRequestFormat(state *webapi.ApiState, v string) {

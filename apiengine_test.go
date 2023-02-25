@@ -11,7 +11,15 @@ import (
 func TestApiEngine_Handle(t *testing.T) {
 	h := setupApiHandlerWrapper(&ApiHandlerWrapper{
 		HttpMethods: []string{
-			"get", "post", "put", "delete", "patch", "head", "trace", "connect", "options",
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodDelete,
+			http.MethodPatch,
+			http.MethodTrace,
+			http.MethodHead,
+			http.MethodConnect,
+			http.MethodOptions,
 		},
 
 		// 直接将 HTTP METHOD 赋值到 X-Method 头。解决 HEAD 方法不支持 body 的情况。
@@ -33,15 +41,15 @@ func TestApiEngine_Handle(t *testing.T) {
 		})
 	}
 
-	run("GET")
-	run("POST")
-	run("PUT")
-	run("DELETE")
-	run("PATCH")
-	run("TRACE")
-	run("HEAD")
-	run("CONNECT")
-	run("OPTIONS")
+	run(http.MethodGet)
+	run(http.MethodPost)
+	run(http.MethodPut)
+	run(http.MethodDelete)
+	run(http.MethodPatch)
+	run(http.MethodTrace)
+	run(http.MethodHead)
+	run(http.MethodConnect)
+	run(http.MethodOptions)
 }
 
 func TestApiEngine_HandleActions(t *testing.T) {
@@ -66,13 +74,13 @@ func TestApiEngine_HandleActions(t *testing.T) {
 		})
 	}
 
-	run("GET", e.HandleGet)
-	run("POST", e.HandlePost)
-	run("PUT", e.HandlePut)
-	run("DELETE", e.HandleDelete)
-	run("PATCH", e.HandlePatch)
-	run("TRACE", e.HandleTrace)
-	run("HEAD", e.HandleHead)
-	run("CONNECT", e.HandleConnect)
-	run("OPTIONS", e.HandleOptions)
+	run(http.MethodGet, e.HandleGet)
+	run(http.MethodPost, e.HandlePost)
+	run(http.MethodPut, e.HandlePut)
+	run(http.MethodDelete, e.HandleDelete)
+	run(http.MethodPatch, e.HandlePatch)
+	run(http.MethodTrace, e.HandleTrace)
+	run(http.MethodHead, e.HandleHead)
+	run(http.MethodConnect, e.HandleConnect)
+	run(http.MethodOptions, e.HandleOptions)
 }

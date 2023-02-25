@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
@@ -439,7 +440,7 @@ func (p slimApiDecoderTestProvider) doTestPostForm(
 
 	body := p.buildQueryString(requestBody)
 	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, url, webapitest.NewStateSetup{
-		HttpMethod:  "POST",
+		HttpMethod:  http.MethodPost,
 		ContentType: webapi.ContentTypeForm,
 		BodyString:  body,
 	})
@@ -462,7 +463,7 @@ func (p slimApiDecoderTestProvider) doTestPostJson(
 	require.NoError(p.t, err, "to json")
 
 	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, url, webapitest.NewStateSetup{
-		HttpMethod:  "POST",
+		HttpMethod:  http.MethodPost,
 		ContentType: webapi.ContentTypeJson,
 		BodyReader:  bytes.NewBuffer(jsonBytes),
 	})
@@ -496,7 +497,7 @@ func (p slimApiDecoderTestProvider) doTestMultipartForm(
 	bodyString := string(bodyBytes)
 
 	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, url, webapitest.NewStateSetup{
-		HttpMethod:  "POST",
+		HttpMethod:  http.MethodPost,
 		ContentType: w.FormDataContentType(),
 		BodyReader:  strings.NewReader(bodyString),
 	})

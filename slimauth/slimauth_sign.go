@@ -251,7 +251,7 @@ func buildDataToSign(r *http.Request, rewindBody bool, timestamp int64) ([]byte,
 	appendQueryWithNewLine(buf, true, r.URL.Query())
 
 	// BODY
-	if r.Method == "POST" || r.Method == "PUT" || r.Method == "PATCH" {
+	if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodPatch {
 		contentType, ok := r.Header[webapi.HttpHeaderContentType]
 		if !ok {
 			err := fmt.Errorf("missing Content-Type")
