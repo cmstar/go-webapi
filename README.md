@@ -1,9 +1,11 @@
 # webapi
 
-[![GoDoc](https://godoc.org/github.com/cmstar/go-conv?status.svg)](https://pkg.go.dev/github.com/cmstar/go-webapi)
+[![GoDoc](https://godoc.org/github.com/cmstar/go-webapi?status.svg)](https://pkg.go.dev/github.com/cmstar/go-webapi)
 [![Go](https://github.com/cmstar/go-webapi/workflows/Go/badge.svg)](https://github.com/cmstar/go-webapi/actions?query=workflow%3AGo)
 [![codecov](https://codecov.io/gh/cmstar/go-webapi/branch/master/graph/badge.svg)](https://codecov.io/gh/cmstar/go-webapi)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](https://opensource.org/licenses/MIT)
+[![GoVersion](https://img.shields.io/github/go-mod/go-version/cmstar/go-webapi)](https://github.com/cmstar/go-webapi/blob/main/go.mod)
+[![Go Report Card](https://goreportcard.com/badge/github.com/cmstar/go-webapi)](https://goreportcard.com/report/github.com/cmstar/go-webapi)
 
 这是[SlimWebApi](https://github.com/cmstar/SlimWebApi)的 Go 版。 SlimAPI 通信协议详见[godoc-SlimAPI通信协议](https://pkg.go.dev/github.com/cmstar/go-webapi/slimapi#pkg-overview)。
 
