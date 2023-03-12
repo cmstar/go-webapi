@@ -118,13 +118,13 @@ func Test_basicApiMethodCaller_Call(t *testing.T) {
 				defer tt.deferFunc(t)
 			}
 
-			arglen := len(tt.args)
+			argLen := len(tt.args)
 			state := &ApiState{
 				Method: ApiMethod{"", reflect.ValueOf(tt.method), ""},
-				Args:   make([]reflect.Value, arglen),
+				Args:   make([]reflect.Value, argLen),
 			}
 
-			for i := 0; i < arglen; i++ {
+			for i := 0; i < argLen; i++ {
 				state.Args[i] = reflect.ValueOf(tt.args[i])
 			}
 

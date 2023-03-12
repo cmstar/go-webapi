@@ -54,7 +54,7 @@ func Test_basicApiResponseBuilder_BuildResponse(t *testing.T) {
 		assert.Equal(t, expect, *state.Response)
 	})
 
-	t.Run("badrequest", func(t *testing.T) {
+	t.Run("bad-request", func(t *testing.T) {
 		state := &ApiState{
 			Data:  "d",
 			Error: CreateBadRequestError(nil, nil, "x"),
@@ -68,7 +68,7 @@ func Test_basicApiResponseBuilder_BuildResponse(t *testing.T) {
 		assert.Equal(t, expect, *state.Response)
 	})
 
-	t.Run("badrequest-wrap-from-panic", func(t *testing.T) {
+	t.Run("bad-request-wrap-from-panic", func(t *testing.T) {
 		var err error
 		func() {
 			defer func() {
