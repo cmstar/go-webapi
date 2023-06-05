@@ -72,6 +72,9 @@ func (d *slimApiNameResolver) FillMethod(state *webapi.ApiState) {
 
 		case webapi.ContentTypeForm:
 			requestFormat = meta_RequestFormat_Post
+
+		case webapi.ContentTypeMultipartForm:
+			requestFormat = meta_RequestFormat_Post
 		}
 	} else {
 		// 指定的 format 串还可包含多段使用逗号隔开的值（ e.g. json,plain ）， plain 是对应回执的，需单独处理。

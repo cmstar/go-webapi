@@ -125,6 +125,14 @@ func Test_slimApiNameResolver_FillMethod(t *testing.T) {
 		callback:            "",
 	})
 
+	// Content-Type 分号后的部分被忽略。
+	testOne("?~method=name&multi=1", webapi.ContentTypeMultipartForm+"; boundary=----123", want{
+		name:                "name",
+		requestFormat:       meta_RequestFormat_Post,
+		responseContentType: webapi.ContentTypeJson,
+		callback:            "",
+	})
+
 	// Content-Type 分后后的部分被忽略。
 	testOne("?~method=name&with_charset=1", webapi.ContentTypeForm+"; charset=utf8", want{
 		name:                "name",
