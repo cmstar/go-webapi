@@ -164,7 +164,7 @@ const (
 )
 
 // AppendSign 计算请求的签名，并将其赋值到请求的 Authorization 头。
-// 调用此方法后， [http.Request.Body] 会被读取并重新置换为新的 [bytes.Buffer] 。
+// 调用此方法后， [http.Request.Body] 会被读取并重新置换为新的 [bytes.Buffer] ，旧的 body 会被 Close 。
 //   - r 需要计算签名的请求。
 //   - accessKey 对应 Authorization 头中的 Key 字段的值。
 //   - secret HMAC-SHA256 的密钥，使用 UTF-8 字符集。
@@ -193,7 +193,7 @@ func AppendSign(r *http.Request, accessKey, secret string, authScheme string, ti
 // Sign 计算给定的请求的签名。
 //   - r 需要计算签名的请求。。
 //   - rewindBody 指定是否需要重用 [http.Request.Body] 。
-//     若为 true ，则读取完 body 后，它会被替换为新的、可重读的 [bytes.Buffer] 。
+//     若为 true ，则读取完 body 后，它会被替换为新的、可重读的 [bytes.Buffer] ，旧的 body 会被 Close 。
 //   - secret HMAC-SHA256 的密钥，使用 UTF-8 字符集。
 //   - timestamp UNIX 时间戳，对应 Authorization 头的 Timestamp 字段的值。
 func Sign(r *http.Request, rewindBody bool, secret string, timestamp int64) SignResult {
@@ -327,13 +327,18 @@ func appendQueryWithNewLine(buf *bytes.Buffer, fromUrl bool, query url.Values) {
 // 读取整个 [http.Request.Body] 并返回读取到数据。
 // 读取完毕后，原 body 会被关闭， Body 字段被替换为新的、未被读取的 [bytes.Buffer] ，其包含读取到数据。
 // 此方法用于处理 body 的重复读取。
-func repeatableReadBody(r *http.Request) ([]byte, error) {
-	data, err := io.ReadAll(r.Body)
-	if err != nil {
-		return nil, err
-	}
+func repeatableReadBody(r *http.Request) (body []byte, err error) {
+	// 旧的 Body 被置换出来后，就不会再被自动关闭了，需要单独关。
+	oldBody := r.Body
+	defer func() {
+		e := oldBody.Close()
+		if err == nil {
+			err = e
+		}
+		// Drop e if err is not nil.
+	}()
 
-	err = r.Body.Close()
+	data, err := io.ReadAll(oldBody)
 	if err != nil {
 		return nil, err
 	}
