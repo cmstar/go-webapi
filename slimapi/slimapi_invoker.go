@@ -77,6 +77,14 @@ func (x SlimApiInvoker[TParam, TData]) DoRaw(params TParam) (res webapi.ApiRespo
 		return
 	}
 
+	defer func() {
+		e := response.Body.Close()
+		if err == nil {
+			err = e
+		}
+		// Drop e if err is not nil.
+	}()
+
 	out, err := io.ReadAll(response.Body)
 	if err != nil {
 		err = wrapErr(err)
