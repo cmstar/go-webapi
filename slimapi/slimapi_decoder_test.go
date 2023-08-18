@@ -39,9 +39,11 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 		methodName: "F3",
 		runMethods: RUN_ALL,
 		requestBody: map[string]any{
-			"i":           123,
+			"i": 123,
+			"F": "1.5",
+		},
+		requestRoutes: map[string]string{
 			"stringField": "ss",
-			"F":           "1.5",
 		},
 		expected: []any{
 			simpleIn{123, "ss", float32(1.5), 0},
@@ -55,6 +57,9 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 		requestQuery: map[string]any{
 			"StringField": "part1", // 大小写不敏感，两个 StringField 会被合并。
 			"noUse":       3,
+		},
+		requestRoutes: map[string]string{
+			"stringField": "hidden",
 		},
 		requestBody: map[string]any{
 			"i":           123,
@@ -319,14 +324,15 @@ const (
 )
 
 type testOneArgs struct {
-	methodName      string         // 方法名称。
-	tag             string         // 用于备注测试用例。
-	runMethods      RunRequestType // 位标记，指定要执行的请求类型。
-	requestQuery    map[string]any // 固定放在 URL 上的输入参数。通过 HTTP 请求发送，反序列化后传给 methodName 对应方法。
-	requestBody     map[string]any // Body 部分的输入参数。 GET 时会和 requestQuery 合并在一起。
-	expected        []any          // 预期的解析结果，顺序需和 methodName 对应方法的入参一致。可以用 ExpectedSpecialType 指代特定类型。
-	errPattern      string         // 断言 ApiState.Error 的消息。
-	panicMsgPattern string         // 正则，用于验证 panic 的消息；若预期不会 panic ，则为空。
+	methodName      string            // 方法名称。
+	tag             string            // 用于备注测试用例。
+	runMethods      RunRequestType    // 位标记，指定要执行的请求类型。
+	requestQuery    map[string]any    // 固定放在 URL 上的输入参数。通过 HTTP 请求发送，反序列化后传给 methodName 对应方法。
+	requestRoutes   map[string]string // 表示 URL 路由表上的参数。同名的会被 requestQuery 覆盖。
+	requestBody     map[string]any    // Body 部分的输入参数。 GET 时会和 requestQuery 合并在一起。
+	expected        []any             // 预期的解析结果，顺序需和 methodName 对应方法的入参一致。可以用 ExpectedSpecialType 指代特定类型。
+	errPattern      string            // 断言 ApiState.Error 的消息。
+	panicMsgPattern string            // 正则，用于验证 panic 的消息；若预期不会 panic ，则为空。
 }
 
 // 测试一个方法。
@@ -367,7 +373,7 @@ func (p slimApiDecoderTestProvider) testOne(args testOneArgs) {
 			if args.panicMsgPattern != "" {
 				defer func() { checkRecoveredError(t, recover()) }()
 			}
-			p.doTestGet(args.methodName, requestQuery, requestBody, expected, args.errPattern)
+			p.doTestGet(args.methodName, requestQuery, args.requestRoutes, requestBody, expected, args.errPattern)
 		})
 	}
 
@@ -376,7 +382,7 @@ func (p slimApiDecoderTestProvider) testOne(args testOneArgs) {
 			if args.panicMsgPattern != "" {
 				defer func() { checkRecoveredError(t, recover()) }()
 			}
-			p.doTestPostForm(args.methodName, requestQuery, requestBody, expected, args.errPattern)
+			p.doTestPostForm(args.methodName, requestQuery, args.requestRoutes, requestBody, expected, args.errPattern)
 		})
 	}
 
@@ -385,7 +391,7 @@ func (p slimApiDecoderTestProvider) testOne(args testOneArgs) {
 			if args.panicMsgPattern != "" {
 				defer func() { checkRecoveredError(t, recover()) }()
 			}
-			p.doTestPostJson(args.methodName, requestQuery, requestBody, expected, args.errPattern)
+			p.doTestPostJson(args.methodName, requestQuery, args.requestRoutes, requestBody, expected, args.errPattern)
 		})
 	}
 
@@ -394,7 +400,7 @@ func (p slimApiDecoderTestProvider) testOne(args testOneArgs) {
 			if args.panicMsgPattern != "" {
 				defer func() { checkRecoveredError(t, recover()) }()
 			}
-			p.doTestMultipartForm(args.methodName, requestQuery, requestBody, expected, args.errPattern)
+			p.doTestMultipartForm(args.methodName, requestQuery, args.requestRoutes, requestBody, expected, args.errPattern)
 		})
 	}
 }
@@ -402,6 +408,7 @@ func (p slimApiDecoderTestProvider) testOne(args testOneArgs) {
 func (p slimApiDecoderTestProvider) doTestGet(
 	methodName string,
 	requestQuery map[string]any,
+	requestRoute map[string]string,
 	requestBody map[string]any, // Merge with requestQuery.
 	expected []any,
 	errPattern string,
@@ -422,13 +429,16 @@ func (p slimApiDecoderTestProvider) doTestGet(
 		url += p.buildQueryString(requestBody)
 	}
 
-	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, url, webapitest.NewStateSetup{})
+	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, url, webapitest.NewStateSetup{
+		RouteParams: requestRoute,
+	})
 	p.doTestDecode(state, methodName, meta_RequestFormat_Get, expected, errPattern)
 }
 
 func (p slimApiDecoderTestProvider) doTestPostForm(
 	methodName string,
 	requestQuery map[string]any,
+	requestRoute map[string]string,
 	requestBody map[string]any,
 	expected []any,
 	errPattern string,
@@ -442,6 +452,7 @@ func (p slimApiDecoderTestProvider) doTestPostForm(
 	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, url, webapitest.NewStateSetup{
 		HttpMethod:  http.MethodPost,
 		ContentType: webapi.ContentTypeForm,
+		RouteParams: requestRoute,
 		BodyString:  body,
 	})
 	p.doTestDecode(state, methodName, meta_RequestFormat_Post, expected, errPattern)
@@ -450,6 +461,7 @@ func (p slimApiDecoderTestProvider) doTestPostForm(
 func (p slimApiDecoderTestProvider) doTestPostJson(
 	methodName string,
 	requestQuery map[string]any,
+	requestRoute map[string]string,
 	requestBody map[string]any,
 	expected []any,
 	errPattern string,
@@ -465,6 +477,7 @@ func (p slimApiDecoderTestProvider) doTestPostJson(
 	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, url, webapitest.NewStateSetup{
 		HttpMethod:  http.MethodPost,
 		ContentType: webapi.ContentTypeJson,
+		RouteParams: requestRoute,
 		BodyReader:  bytes.NewBuffer(jsonBytes),
 	})
 	p.doTestDecode(state, methodName, meta_RequestFormat_Json, expected, errPattern)
@@ -473,6 +486,7 @@ func (p slimApiDecoderTestProvider) doTestPostJson(
 func (p slimApiDecoderTestProvider) doTestMultipartForm(
 	methodName string,
 	requestQuery map[string]any,
+	requestRoute map[string]string,
 	requestBody map[string]any,
 	expected []any,
 	errPattern string,
@@ -499,6 +513,7 @@ func (p slimApiDecoderTestProvider) doTestMultipartForm(
 	state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, url, webapitest.NewStateSetup{
 		HttpMethod:  http.MethodPost,
 		ContentType: w.FormDataContentType(),
+		RouteParams: requestRoute,
 		BodyReader:  strings.NewReader(bodyString),
 	})
 	p.doTestDecode(state, methodName, meta_RequestFormat_Post, expected, errPattern)

@@ -16,6 +16,28 @@ func GetRouteParam(r *http.Request, name string) string {
 	return chi.URLParam(r, name)
 }
 
+type RouteParam struct {
+	Key, Value string
+}
+
+// AllRouteParams 获取请求中所有的路由参数。若没有路由参数，返回 nil 。
+func AllRouteParams(r *http.Request) []RouteParam {
+	c := chi.RouteContext(r.Context())
+	if c == nil {
+		return nil
+	}
+
+	ln := len(c.URLParams.Keys)
+	res := make([]RouteParam, ln)
+	for i := 0; i < ln; i++ {
+		res = append(res, RouteParam{
+			Key:   c.URLParams.Keys[i],
+			Value: c.URLParams.Values[i],
+		})
+	}
+	return res
+}
+
 // SetRouteParams 向当前请求中添加一组路由参数，返回追加参数后的请求。
 // 若给定参数表为 nil 或不包含元素，则返回原始请求。
 func SetRouteParams(r *http.Request, params map[string]string) *http.Request {

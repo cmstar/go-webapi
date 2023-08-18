@@ -83,13 +83,23 @@ func (d slimApiMethodStructArgDecoder) paramMap(state *webapi.ApiState) (map[str
 	return nil, nil // never run
 }
 
-// 读取 URL 上的参数，返回的参数名称总是小写的，值总是 string 。
+// 读取 URL 上的参数，包含 query-string 和路由参数。
+// 参数名称（ key ）是大小写不敏感的，总是被转换为小写，值（ value ）总是 string 。
+// 如果一个参数同时出现在 query 和路由上，会使用 query 的值（实际使用就应避免这种情况）。
 func (d slimApiMethodStructArgDecoder) readQueryInLowercase(state *webapi.ApiState) map[string]any {
-	// 用自己解析的这个 Query 。
 	m := make(map[string]any)
+
+	// 路由表。
+	routeParams := webapi.AllRouteParams(state.RawRequest)
+	for _, v := range routeParams {
+		m[strings.ToLower(v.Key)] = v.Value
+	}
+
+	// 用自己解析的这个 Query 。
 	for k, v := range state.Query.Named {
 		m[k] = v
 	}
+
 	return m
 }
 
