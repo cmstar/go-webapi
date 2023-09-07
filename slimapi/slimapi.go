@@ -78,27 +78,33 @@ func SupportedHttpMethods() []string {
 	return []string{http.MethodGet, http.MethodPost}
 }
 
+// 将解析到的 请求格式 存储到 ApiState 中。
 func setRequestFormat(state *webapi.ApiState, v string) {
 	state.SetCustomData(customData_RequestFormat, v)
 }
 
+// 读取 setRequestFormat 设置的值。
 func getRequestFormat(state *webapi.ApiState) string {
 	return getCustomString(state, customData_RequestFormat)
 }
 
+// 将解析到的 回调名称 存储到 ApiState 中。
 func setCallback(state *webapi.ApiState, callback string) {
 	state.SetCustomData(customData_ResponseCallback, callback)
 }
 
+// 读取 setCallback 设置的值。
 func getCallback(state *webapi.ApiState) string {
 	return getCustomString(state, customData_ResponseCallback)
 }
 
-func setBufferedBody(state *webapi.ApiState, body string) {
+// 将请求的 body 部分相关的信息存储到 ApiState 中。目前这部分描述用在日志上部分。
+func setRequestBodyDescription(state *webapi.ApiState, body string) {
 	state.SetCustomData(customData_BufferedBody, body)
 }
 
-func getBufferedBody(state *webapi.ApiState) string {
+// 读取 setRequestBodyDescription 设置的值。
+func getRequestBodyDescription(state *webapi.ApiState) string {
 	return getCustomString(state, customData_BufferedBody)
 }
 

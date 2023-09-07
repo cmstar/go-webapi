@@ -126,7 +126,7 @@ func (d slimApiMethodStructArgDecoder) readForm(state *webapi.ApiState, contentT
 		}
 	}
 
-	setBufferedBody(state, form)
+	setRequestBodyDescription(state, form)
 	return lowercaseParams
 }
 
@@ -163,7 +163,7 @@ func (d slimApiMethodStructArgDecoder) readMultiPartForm(state *webapi.ApiState)
 	}
 
 	body := buf.String()
-	setBufferedBody(state, body)
+	setRequestBodyDescription(state, body)
 	return lowercaseParams, nil
 }
 
@@ -183,7 +183,7 @@ func (d slimApiMethodStructArgDecoder) readJsonBody(state *webapi.ApiState) (map
 	}
 
 	// json.Unmarshal 接收 []byte 而这里接收 string ，转换有点开销，但目前没啥好方案解决。
-	setBufferedBody(state, string(body))
+	setRequestBodyDescription(state, string(body))
 
 	for k, v := range fromBody {
 		// 采用先删再加的方式，使 JSON 字段尽量维持原来的样子。

@@ -121,7 +121,7 @@ func Test_slimApiLogger_Log(t *testing.T) {
 			state.UserHost = tt.args.userHost
 
 			if tt.args.body != "" {
-				setBufferedBody(state, tt.args.body)
+				setRequestBodyDescription(state, tt.args.body)
 			}
 
 			if tt.args.err != nil {

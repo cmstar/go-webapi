@@ -15,7 +15,7 @@ type logBody struct{}
 var _ webapi.LogSetup = (*logBody)(nil)
 
 func (logBody) Setup(state *webapi.ApiState) {
-	body := getBufferedBody(state)
+	body := getRequestBodyDescription(state)
 	if len(body) > 0 {
 		state.LogMessage = append(state.LogMessage,
 			"Length", len(body),
