@@ -1,6 +1,8 @@
 /*
 slimauth 实现 SlimAuth 协议，它是带有签名校验逻辑的 SlimAPI 的扩展。
 
+但是和 SlimAPI 相比，当前不支持 multipart/form-data 类型的请求。
+
 # 签名校验
 
 每个 API 调用者会被分配到一组配对的 key-secret ， key 用于标识调用者的身份， secret 用于生成签名。
