@@ -3,7 +3,10 @@ package slimapi
 import (
 	"errors"
 	"fmt"
+	"mime/multipart"
 	"net/http"
+	"net/textproto"
+	"strings"
 	"testing"
 
 	"github.com/cmstar/go-errx"
@@ -172,6 +175,40 @@ func TestSlimApi_SumAndShowMap_json(t *testing.T) {
 		requestRelativeUrl: "?SumAndShowMap.json",
 		requestContentType: "",
 		requestBody:        `{ "S":[1,3], "M":{"A":1} }`, // map 是乱序的，所以 M 只能放一个字段，不然序列化后顺序错乱不好检验。
+		requestRouteParam:  map[string]string{},
+		wantStatusCode:     200,
+		wantContentType:    webapi.ContentTypeJson,
+		wantBody:           `{"Code":0,"Message":"","Data":{"Sum":4,"M":{"A":1}}}`,
+	})
+}
+
+func TestSlimApi_SumAndShowMap_multipart(t *testing.T) {
+	buf := new(strings.Builder)
+	w := multipart.NewWriter(buf)
+
+	// S: [1,3]
+	w.WriteField("s", "1~3")
+
+	// M
+	h := make(textproto.MIMEHeader)
+	h.Set(webapi.HttpHeaderContentDisposition, `form-data; name="M"; filename="blob"`)
+	h.Set(webapi.HttpHeaderContentType, webapi.ContentTypeJson)
+	p, _ := w.CreatePart(h)
+	p.Write([]byte(`{"A":1}`))
+
+	// 一个无意义的文件，作为噪音。
+	h = make(textproto.MIMEHeader)
+	h.Set(webapi.HttpHeaderContentDisposition, `form-data; name="noise"; filename="noise"`)
+	h.Set(webapi.HttpHeaderContentType, "image/jpeg")
+	p, _ = w.CreatePart(h)
+	p.Write([]byte{1, 2, 3, 4})
+
+	w.Close()
+
+	DoIntegrationTest(t, integrationTestArgs{
+		requestRelativeUrl: "?SumAndShowMap",
+		requestContentType: w.FormDataContentType(),
+		requestBody:        buf.String(),
 		requestRouteParam:  map[string]string{},
 		wantStatusCode:     200,
 		wantContentType:    webapi.ContentTypeJson,

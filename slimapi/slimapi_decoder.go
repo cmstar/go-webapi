@@ -2,8 +2,10 @@ package slimapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
-	"net/url"
+	"net/http"
+	"net/textproto"
 	"reflect"
 	"strings"
 
@@ -130,18 +132,26 @@ func (d slimApiMethodStructArgDecoder) readForm(state *webapi.ApiState, contentT
 	return lowercaseParams
 }
 
+// 解析 multipart/form-data 类型的请求。以下内容会被放在返回的 map 里：
+//   - URL 上的参数（ query ）。
+//   - body 中的 text/plain 类型的 part : Content-Disposition 的 name 作为 key ，内容作为 value ，类型为 string 。
+//   - body 中的 application/json 类型的 part ： Content-Disposition 的 name 作为 key ，内容作为 value ，类型为 JSON 反序列化后的 map[string]any 。
+//     此类型的 part 可用于解决上传文件的同事传递复杂结构参数的需求。
+//
+// 如果同名的 part 有多个，仅保留最后一个。
 func (d slimApiMethodStructArgDecoder) readMultiPartForm(state *webapi.ApiState) (map[string]any, error) {
 	req := state.RawRequest
 
-	// ParseMultipartForm 会将 URL 和 body 上的参数都合并到 req.Form 上。
 	err := req.ParseMultipartForm(maxMemorySizeParseRequestBody)
 	if err != nil {
 		err = errx.Wrap("slimApiDecoder: read multipart-form", err)
 		return nil, err
 	}
 
+	// URL 上的参数（ query ）。
 	lowercaseParams := d.readQueryInLowercase(state)
-	buf := new(strings.Builder)
+
+	// body 中的 text/plain 类型的 part 。
 	for k, vs := range req.PostForm {
 		k = strings.ToLower(k)
 		v := strings.Join(vs, ",")
@@ -153,20 +163,71 @@ func (d slimApiMethodStructArgDecoder) readMultiPartForm(state *webapi.ApiState)
 		} else {
 			lowercaseParams[k] = v
 		}
-
-		if buf.Len() > 0 {
-			buf.WriteRune('&')
-		}
-		buf.WriteString(k)
-		buf.WriteByte('=')
-		buf.WriteString(url.QueryEscape(v))
 	}
 
-	body := buf.String()
-	setRequestBodyDescription(state, body)
+	// body 中的 application/json 类型的 part 。
+	err = d.fillFromJsonFormParts(lowercaseParams, req)
+	if err != nil {
+		return nil, err
+	}
+
+	description, err := json.Marshal(lowercaseParams)
+	if err != nil {
+		err = errx.Wrap("slimApiDecoder: marshal params", err)
+		return nil, err
+	}
+
+	setRequestBodyDescription(state, string(description))
 	return lowercaseParams, nil
 }
 
+func (d slimApiMethodStructArgDecoder) fillFromJsonFormParts(lowercaseParams map[string]any, req *http.Request) error {
+	isJsonPart := func(header textproto.MIMEHeader) bool {
+		for name, values := range header {
+			if name == webapi.HttpHeaderContentType {
+				for _, v := range values {
+					if v == webapi.ContentTypeJson {
+						return true
+					}
+				}
+			}
+		}
+		return false
+	}
+
+	for name, fileHeader := range req.MultipartForm.File {
+		file := fileHeader[len(fileHeader)-1]
+		if isJsonPart(file.Header) {
+			file, err := file.Open()
+			if err != nil {
+				err = fmt.Errorf("open part %s: %w", name, err)
+				return err
+			}
+
+			content, err := io.ReadAll(file)
+			if err != nil {
+				err = fmt.Errorf("read part %s: %w", name, err)
+				return err
+			}
+
+			// 当前 part 本身表示一个字段的值，而不是整个参数表。
+			// 故这里和 readJsonBody 不同，允许 JSON 值是一个简单类型或者数组，不必要转换为 map[string]any 。
+			var value any
+			err = json.Unmarshal(content, &value)
+			if err != nil {
+				err = fmt.Errorf("unmarshal JSON part %s: %w", name, err)
+				return err
+			}
+
+			lowercaseParams[strings.ToLower(name)] = value
+		}
+	}
+
+	return nil
+}
+
+// 将整个 HTTP body 作为一个 JSON 处理。要求其必须是一个 JSON object ，即包裹在“{}”里，可以表示为 key-value 结构。
+// JSON 的 key 会和 URL 上的参数合并，若一个参数同时出现在 body 和 URL 上，仅取 body 上的值。
 func (d slimApiMethodStructArgDecoder) readJsonBody(state *webapi.ApiState) (map[string]any, error) {
 	body, err := io.ReadAll(state.RawRequest.Body)
 	if err != nil {

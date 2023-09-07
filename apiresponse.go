@@ -26,6 +26,9 @@ const (
 const (
 	// HttpHeaderContentType 对应 HTTP 头中的 Content-Type 字段。
 	HttpHeaderContentType = "Content-Type"
+
+	// HttpHeaderContentDisposition 对应 HTTP 头中的 Content-Disposition 字段。
+	HttpHeaderContentDisposition = "Content-Disposition"
 )
 
 // 用于 WebAPI 预定义的状态码。1000以下基本抄 HTTP 状态码。

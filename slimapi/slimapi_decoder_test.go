@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"reflect"
 	"strings"
@@ -162,7 +163,7 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 
 	p.testOne(testOneArgs{
 		methodName: "Complex",
-		runMethods: RUN_JSON, // 嵌套复杂类型不支持 GET 。
+		runMethods: RUN_JSON | RUN_MULTIPART_FORM, // 嵌套复杂类型不支持 GET 。
 		requestBody: map[string]any{
 			"F3Slice": []any{
 				map[string]any{"I": 12},
@@ -248,6 +249,39 @@ func Test_slimApiDecoder_Decode(t *testing.T) {
 		errPattern:      "bad request",
 		panicMsgPattern: ``,
 	})
+}
+
+func TestGG(t *testing.T) {
+	p := slimApiDecoderTestProvider{t}
+	p.testOne(testOneArgs{
+		methodName: "Complex",
+		runMethods: RUN_JSON | RUN_MULTIPART_FORM, // 嵌套复杂类型不支持 GET 。
+		requestBody: map[string]any{
+			"F3Slice": []any{
+				map[string]any{"I": 12},
+				map[string]any{"StringField": "gg"},
+			},
+			"MM": map[string]any{
+				"k1": []int{3, 2, 1},
+				"k2": "11~22~33",
+			},
+			"Boolean": true,
+		},
+		expected: []any{
+			complexIn{
+				F3Slice: []*simpleIn{
+					{I: 12},
+					{StringField: "gg"},
+				},
+				MM: map[string][]int{
+					"k1": {3, 2, 1},
+					"k2": {11, 22, 33},
+				},
+				Boolean: true,
+			},
+		},
+	})
+
 }
 
 const urlBase = "http://temp.org/path/"
@@ -499,12 +533,32 @@ func (p slimApiDecoderTestProvider) doTestMultipartForm(
 	buf := new(bytes.Buffer)
 	w := multipart.NewWriter(buf)
 	for k, v := range requestBody {
-		w.WriteField(k, fmt.Sprintf("%v", v))
+		// 复杂类型（map/slice）以 application/json 方式上送；
+		// 其余以 text/plain 方式上送（ HTTP 的默认值， WriteField 即可）。
+		if reflect.TypeOf(v).Kind() == reflect.Map || reflect.TypeOf(v).Kind() == reflect.Slice {
+			h := make(textproto.MIMEHeader)
+			h.Set(webapi.HttpHeaderContentDisposition, `form-data; name="`+k+`"; filename="blob"`)
+			h.Set(webapi.HttpHeaderContentType, webapi.ContentTypeJson)
+
+			content, err := json.Marshal(v)
+			if err != nil {
+				panic(err)
+			}
+
+			p, err := w.CreatePart(h)
+			if err != nil {
+				panic(err)
+			}
+
+			_, err = p.Write(content)
+			if err != nil {
+				panic(err)
+			}
+		} else {
+			w.WriteField(k, fmt.Sprintf("%v", v))
+		}
 	}
-	err := w.Close()
-	if err != nil {
-		require.NoError(p.t, err)
-	}
+	require.NoError(p.t, w.Close())
 
 	// 为便于调试，多消耗点资源，将 body 放到字符串里。
 	bodyBytes, _ := io.ReadAll(buf)
