@@ -3,32 +3,32 @@ Package slimapi 基于 webapi 包，实现基于 SlimAPI 协议的开发框架�
 
 SlimAPI 是一个基于 HTTP WebAPI 的通信契约。旨在将代码与 HTTP 通信解耦，使编码者可以更多的关注业务逻辑而不是通信方式。
 
-SlimAPI 请求
+# SlimAPI 请求
 
 可以通过 HTTP 的 Content-Type 头指定使用何种格式请求，目前支持的类型如下：
-	- GET 不读取 Content-Type 头。
-	- POST FORM 表单格式， Content-Type 可以是 application/x-www-form-urlencoded 或 multipart/form-data 。
-	- POST JSON 以 JSON 作为数据，值为 application/json 。
+  - GET 不读取 Content-Type 头。
+  - POST FORM 表单格式， Content-Type 可以是 application/x-www-form-urlencoded 或 multipart/form-data 。
+  - POST JSON 以 JSON 作为数据，值为 application/json 。
 
 也可以不指定 Content-Type 头，而通过`~format`参数指定格式，详见下文。
 
-URL 形式1
+# URL 形式1
 
 http://domain/ApiEntry?~method=METHOD&~format=FORMAT&~callback=CALLBACK
 
 以“~”标记的参数为 API 框架的元参数：
-	- ~method：必填；表示被调用的方法的名称。
-	- ~format：可选；请求所使用的数据格式，支持get/post/json；此参数在可以在不方面指定`Content-Type`时提供相同的功能。
-	- ~callback：可选；JSONP回调函数的名称，一旦制定此参数，返回一个 JSONP 结果，Content-Type: text/javascript 。
+  - ~method：必填；表示被调用的方法的名称。
+  - ~format：可选；请求所使用的数据格式，支持get/post/json；此参数在可以在不方面指定`Content-Type`时提供相同的功能。
+  - ~callback：可选；JSONP回调函数的名称，一旦制定此参数，返回一个 JSONP 结果，Content-Type: text/javascript 。
 
 参数名称都是大小写不敏感的。`~format`参数优先级高于`Content-Type`，若指定了`~format`，则`Content-Type`的值被忽略。
 
 `~format`的可选值：
-	- get 默认值。使用 GET 方式处理。
-	- post 效果等同于给定 Content-Type: application/x-www-form-urlencoded
-	- json 效果等同于给定 Content-Type: application/json
+  - get 默认值。使用 GET 方式处理。
+  - post 效果等同于给定 Content-Type: application/x-www-form-urlencoded
+  - json 效果等同于给定 Content-Type: application/json
 
-URL 形式2
+# URL 形式2
 
 http://domain/ApiEntry?METHOD.FORMAT(CALLBACK)
 不需要再写参数名字，直接将需要的元参数值追加在URL后面。
@@ -37,18 +37,17 @@ http://domain/ApiEntry?METHOD.FORMAT(CALLBACK)
 省略“.FORMAT”后形如： http://domain/ApiEntry?METHOD(CALLBACK) ；
 省略“(CALLBACK)”后形如： http://domain/ApiEntry?METHOD.FORMAT 。
 
-URL 形式3
+# URL 形式3
 
 通过路由规则，将元参数编排到 URL 路径里。这是最常见的方案： http://domain/ApiEntry/METHOD
 这里 METHOD 就是元参数 ~method 。
 
-
-SlimAPI 请求参数的格式
+# SlimAPI 请求参数的格式
 
 请求参数
-	- GET 参数体现在 URL 上，形如 data=1&name=abc&time=2014-4-8 。
-	- 表单 以 POST 方式放在HTTP BODY中。
-	- JSON 只能使用 POST 方式上送。
+  - GET 参数体现在 URL 上，形如 data=1&name=abc&time=2014-4-8 。
+  - 表单 以 POST 方式放在 HTTP BODY 中。
+  - JSON 只能使用 POST 方式上送。
 
 可在 GET/表单参数中传递简单的数组，数组元素间使用 ~ 分割，如 1~2~3~4~5 可表示数组 [1, 2, 3, 4, 5]。
 
@@ -62,8 +61,29 @@ SlimAPI 请求参数的格式
 
 日期格式使用字符串的 yyyy-MM-dd HH:mm:ss 格式，默认为 UTC 时间。也支持 RFC3339 ，这种格式自带时区。
 
+# 使用 multipart/form-data 传递复杂参数
 
-SlimAPI 回执格式
+在 multipart/form-data 的 body 上，通常每个 part 表示一个 text/plain 类型的简单值。 SlimAPI 支持以 JSON 形式传递复杂的参数：
+  - part 的 Content-Type 必须是 application/json 。
+  - part 的 Content-Disposition 必须带有 filename ，具有任意非空值。
+
+下面的请求等同于用 JSON 传递了 {"A":"123", "B":{"B1":"v1", "B2":"v2"}} ：
+
+	POST your_url
+	Content-Type: multipart/form-data; boundary=----xyz
+
+	----xyz
+	Content-Disposition: form-data; name="A"
+
+	123
+	----xyz
+	Content-Disposition: form-data; name="B"; filename="blob"
+	Content-Type: application/json
+
+	{"B1":"v1","B2":"v2"}
+	----xyz--
+
+# SlimAPI 回执格式
 
 若指定了 ~callback 参数，则返回结果为 JSONP 格式： Content-Type: text/javascript ；否则为 JSON 格式： Content-Type: application/json 。
 
