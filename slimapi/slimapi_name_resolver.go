@@ -61,7 +61,7 @@ func (d *slimApiNameResolver) FillMethod(state *webapi.ApiState) {
 		contentType := req.Header.Get(webapi.HttpHeaderContentType)
 
 		// Content-Type 可以被分号分隔，如 “text/html; charset=UTF-8”，我们只需要前面这段。
-		if idx := strings.Index(contentType, ";"); idx > 0 {
+		if idx := strings.IndexByte(contentType, ';'); idx > 0 {
 			contentType = contentType[:idx]
 			contentType = strings.TrimSpace(contentType)
 		}

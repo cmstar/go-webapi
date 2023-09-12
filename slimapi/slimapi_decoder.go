@@ -68,7 +68,7 @@ func (d slimApiMethodStructArgDecoder) paramMap(state *webapi.ApiState) (map[str
 		// Content-Type 为 multipart/form-data 的，交给框架内置方法解析。
 		// 为 application/x-www-form-urlencoded 或其他的 Content-Type 的，则单独读取，
 		// 此时的值类似 URL 上的 query-string ，需要使用同样的规则处理。
-		if strings.Index(contentType, webapi.ContentTypeMultipartForm) == 0 {
+		if strings.HasPrefix(contentType, webapi.ContentTypeMultipartForm) {
 			return d.readMultiPartForm(state)
 		}
 

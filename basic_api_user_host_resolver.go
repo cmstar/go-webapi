@@ -22,16 +22,16 @@ func (r *basicApiUserHostResolver) FillUserHost(state *ApiState) {
 
 	// 去掉端口部分，仅保留 IP 。
 	if strings.Contains(ip, ".") { // Is IPv4?
-		if colonIdx := strings.Index(ip, ":"); colonIdx > 0 {
+		if colonIdx := strings.IndexByte(ip, ':'); colonIdx > 0 {
 			ip = ip[:colonIdx]
 		}
 	} else { // IPv6
-		start := strings.Index(ip, "[")
+		start := strings.IndexByte(ip, '[')
 		if start < 0 {
 			goto END
 		}
 
-		end := strings.LastIndex(ip, "]")
+		end := strings.LastIndexByte(ip, ']')
 		if end < start {
 			goto END
 		}

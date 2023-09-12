@@ -101,7 +101,7 @@ func ParseQueryString(queryString string) QueryString {
 	right := 0
 
 	for ; left < length; left = right + 1 {
-		right = strings.Index(queryString[left:], "&")
+		right = strings.IndexByte(queryString[left:], '&')
 		if right == -1 {
 			right = length
 		} else {

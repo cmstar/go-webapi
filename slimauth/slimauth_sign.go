@@ -85,7 +85,7 @@ func ParseAuthorizationHeader(r *http.Request, authScheme string) (Authorization
 
 	// Read <Scheme> part.
 	header := headers[0]
-	idx := strings.Index(header, " ")
+	idx := strings.IndexByte(header, ' ')
 	if idx <= 0 {
 		return auth, fmt.Errorf("Authorization scheme error")
 	}

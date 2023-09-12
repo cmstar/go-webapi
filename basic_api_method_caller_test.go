@@ -183,7 +183,7 @@ func compareError(t *testing.T, expected, got error) {
 
 	// Check checkPrefixError.
 	if pErr, ok := expected.(checkPrefixError); ok {
-		if strings.Index(got.Error(), pErr.prefix) != 0 {
+		if !strings.HasPrefix(got.Error(), pErr.prefix) {
 			t.Errorf("expect error starts with '%s', got %s", pErr.prefix, got)
 		}
 		return
