@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
-	"github.com/cmstar/go-conv"
 	"github.com/cmstar/go-webapi"
 )
 
@@ -40,22 +38,6 @@ const (
 	// 自定义字段。记录当前请求 body 部分， ApiDecoder.Decode() 在执行后，将读取到的 body 存储在此字段上。
 	customData_BufferedBody
 )
-
-// Conv 是用于 SlimAPI 的 [conv.Conv] 实例，它支持：
-//   - 使用大小写不敏感（case-insensitive）的方式处理字段。
-//   - 支持 SlimAPI 规定的时间格式 yyyyMMdd HH:mm:ss 。
-//   - 支持字符串到数组的转换，使用 ~ 分割，如将 "1~2~3" 转为 [1, 2, 3] 。
-var Conv = conv.Conv{
-	Conf: conv.Config{
-		FieldMatcherCreator: &conv.SimpleMatcherCreator{
-			Conf: conv.SimpleMatcherConfig{
-				CaseInsensitive: true,
-			},
-		},
-		StringToTime:   ParseTime,
-		StringSplitter: func(v string) []string { return strings.Split(v, "~") },
-	},
-}
 
 // NewSlimApiHandler 创建一个实现 SlimAPI 协议的 webapi.ApiHandlerWrapper 。
 // 可通过替换其成员实现接口的定制。

@@ -2,10 +2,7 @@ package slimapi
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
-	"net/http"
-	"net/textproto"
 	"reflect"
 	"strings"
 
@@ -144,7 +141,7 @@ func (d slimApiMethodStructArgDecoder) readMultiPartForm(state *webapi.ApiState)
 
 	err := req.ParseMultipartForm(maxMemorySizeParseRequestBody)
 	if err != nil {
-		err = errx.Wrap("slimApiDecoder: read multipart-form", err)
+		err = errx.Wrap("slimApiDecoder: parse multipart-form", err)
 		return nil, err
 	}
 
@@ -165,65 +162,22 @@ func (d slimApiMethodStructArgDecoder) readMultiPartForm(state *webapi.ApiState)
 		}
 	}
 
-	// body 中的 application/json 类型的 part 。
-	err = d.fillFromJsonFormParts(lowercaseParams, req)
-	if err != nil {
-		return nil, err
-	}
-
-	description, err := json.Marshal(lowercaseParams)
-	if err != nil {
-		err = errx.Wrap("slimApiDecoder: marshal params", err)
-		return nil, err
-	}
-
-	setRequestBodyDescription(state, string(description))
-	return lowercaseParams, nil
-}
-
-func (d slimApiMethodStructArgDecoder) fillFromJsonFormParts(lowercaseParams map[string]any, req *http.Request) error {
-	isJsonPart := func(header textproto.MIMEHeader) bool {
-		for name, values := range header {
-			if name == webapi.HttpHeaderContentType {
-				for _, v := range values {
-					if v == webapi.ContentTypeJson {
-						return true
-					}
-				}
-			}
-		}
-		return false
-	}
-
+	// body 中的文件类型的 part 。
 	for name, fileHeader := range req.MultipartForm.File {
+		// 同名文件只取最后一个。
 		file := fileHeader[len(fileHeader)-1]
-		if isJsonPart(file.Header) {
-			file, err := file.Open()
-			if err != nil {
-				err = fmt.Errorf("open part %s: %w", name, err)
-				return err
-			}
 
-			content, err := io.ReadAll(file)
-			if err != nil {
-				err = fmt.Errorf("read part %s: %w", name, err)
-				return err
-			}
-
-			// 当前 part 本身表示一个字段的值，而不是整个参数表。
-			// 故这里和 readJsonBody 不同，允许 JSON 值是一个简单类型或者数组，不必要转换为 map[string]any 。
-			var value any
-			err = json.Unmarshal(content, &value)
-			if err != nil {
-				err = fmt.Errorf("unmarshal JSON part %s: %w", name, err)
-				return err
-			}
-
-			lowercaseParams[strings.ToLower(name)] = value
+		// 转换成 *FilePart ，其受 Conv 对象的支持。
+		filePart, err := NewFilePart(file)
+		if err != nil {
+			err = errx.Wrap("slimApiDecoder: parse multipart-form", err)
+			return nil, err
 		}
+		lowercaseParams[strings.ToLower(name)] = filePart
 	}
 
-	return nil
+	setRequestBodyDescription(state, lowercaseParams)
+	return lowercaseParams, nil
 }
 
 // 将整个 HTTP body 作为一个 JSON 处理。要求其必须是一个 JSON object ，即包裹在“{}”里，可以表示为 key-value 结构。

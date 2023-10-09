@@ -186,15 +186,27 @@ func TestSlimApi_SumAndShowMap_multipart(t *testing.T) {
 	buf := new(strings.Builder)
 	w := multipart.NewWriter(buf)
 
-	// S: [1,3]
-	w.WriteField("s", "1~3")
+	// C: value
+	w.WriteField("C", "value")
 
-	// M
+	// A
 	h := make(textproto.MIMEHeader)
-	h.Set(webapi.HttpHeaderContentDisposition, `form-data; name="M"; filename="blob"`)
-	h.Set(webapi.HttpHeaderContentType, webapi.ContentTypeJson)
+	h.Set(webapi.HttpHeaderContentDisposition, `form-data; name="A"; filename="aa"`)
 	p, _ := w.CreatePart(h)
-	p.Write([]byte(`{"A":1}`))
+	p.Write([]byte{})
+
+	// Sum
+	h = make(textproto.MIMEHeader)
+	h.Set(webapi.HttpHeaderContentDisposition, `form-data; name="Sum"; filename="blob"`)
+	h.Set(webapi.HttpHeaderContentType, webapi.ContentTypeJson)
+	p, _ = w.CreatePart(h)
+	p.Write([]byte(`[1,2,3,4]`))
+
+	// B
+	h = make(textproto.MIMEHeader)
+	h.Set(webapi.HttpHeaderContentDisposition, `form-data; name="b"; filename="bb"`)
+	p, _ = w.CreatePart(h)
+	p.Write(make([]byte, 20))
 
 	// 一个无意义的文件，作为噪音。
 	h = make(textproto.MIMEHeader)
@@ -206,13 +218,13 @@ func TestSlimApi_SumAndShowMap_multipart(t *testing.T) {
 	w.Close()
 
 	DoIntegrationTest(t, integrationTestArgs{
-		requestRelativeUrl: "?SumAndShowMap",
+		requestRelativeUrl: "?UploadFile",
 		requestContentType: w.FormDataContentType(),
 		requestBody:        buf.String(),
 		requestRouteParam:  map[string]string{},
 		wantStatusCode:     200,
 		wantContentType:    webapi.ContentTypeJson,
-		wantBody:           `{"Code":0,"Message":"","Data":{"Sum":4,"M":{"A":1}}}`,
+		wantBody:           `{"Code":0,"Message":"","Data":"A:aa, B:20, C:value, Sum:10"}`,
 	})
 }
 
@@ -441,4 +453,17 @@ func (integrationTestMethodProvider) CannotEncode() CannotEncodeResponse {
 
 func (integrationTestMethodProvider) Panic(v any) {
 	panic(v)
+}
+
+func (integrationTestMethodProvider) UploadFile(req struct {
+	A   *multipart.FileHeader
+	B   []byte
+	C   string
+	Sum []int
+}) string {
+	sum := 0
+	for _, v := range req.Sum {
+		sum += v
+	}
+	return fmt.Sprintf("A:%s, B:%d, C:%s, Sum:%d", req.A.Filename, len(req.B), req.C, sum)
 }
