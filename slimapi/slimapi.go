@@ -1,6 +1,8 @@
 package slimapi
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -99,13 +101,35 @@ func getCallback(state *webapi.ApiState) string {
 }
 
 // 将请求的 body 部分相关的信息存储到 ApiState 中。目前这部分描述用在日志上部分。
-func setRequestBodyDescription(state *webapi.ApiState, body string) {
+// body 可以是：
+//   - string 直接输出在日志，无需转换。
+//   - fmt.Stringer 通过 String() 方法被转换为 string 。
+//   - 其他类型，通过json.Marshal() 序列化为字符串。
+func setRequestBodyDescription(state *webapi.ApiState, body any) {
 	state.SetCustomData(customData_BufferedBody, body)
 }
 
 // 读取 setRequestBodyDescription 设置的值。
 func getRequestBodyDescription(state *webapi.ApiState) string {
-	return getCustomString(state, customData_BufferedBody)
+	v, ok := state.GetCustomData(customData_BufferedBody)
+	if !ok {
+		return ""
+	}
+
+	if s, ok := v.(string); ok {
+		return s
+	}
+
+	if s, ok := v.(fmt.Stringer); ok {
+		return s.String()
+	}
+
+	s, err := json.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(s)
 }
 
 func getCustomString(state *webapi.ApiState, key any) string {
