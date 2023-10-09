@@ -33,7 +33,7 @@ var URL = url{}
 
 type url struct{}
 
-var _ webapi.LogSetup = (*ip)(nil)
+var _ webapi.LogSetup = (*url)(nil)
 
 func (url) Setup(state *webapi.ApiState) {
 	state.LogMessage = append(state.LogMessage, "URL", state.RawRequest.RequestURI)
@@ -79,7 +79,7 @@ var Files = files{}
 
 type files struct{}
 
-var _ webapi.LogSetup = (*ip)(nil)
+var _ webapi.LogSetup = (*files)(nil)
 
 func (files) Setup(state *webapi.ApiState) {
 	req := state.RawRequest
