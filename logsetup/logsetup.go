@@ -5,6 +5,7 @@ import (
 	"mime/multipart"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/cmstar/go-webapi"
 )
@@ -122,4 +123,34 @@ func (files) Setup(state *webapi.ApiState) {
 			}
 		}
 	}
+}
+
+// ContentType 输出 HTTP 请求的 Content-Type 头。
+//
+// 若 Content-Type 头重复了多次，只输出第一个值。
+// 不会输出参数部分，如“multipart/form-data; boundary=something”，只输出“multipart/form-data”。
+//
+// 这是一个单例。
+var ContentType = contentType{}
+
+type contentType struct{}
+
+var _ webapi.LogSetup = (*contentType)(nil)
+
+func (contentType) Setup(state *webapi.ApiState) {
+	req := state.RawRequest
+	typ := req.Header[webapi.HttpHeaderContentType]
+	if len(typ) == 0 {
+		return
+	}
+
+	v := typ[0]
+	idx := strings.Index(v, ";")
+	if idx >= 0 {
+		v = v[:idx]
+	}
+
+	state.LogMessage = append(state.LogMessage,
+		"ContentType", v,
+	)
 }

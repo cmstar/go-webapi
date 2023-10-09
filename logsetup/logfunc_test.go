@@ -125,3 +125,42 @@ func TestFiles(t *testing.T) {
 		assert.Equal(t, want, state.LogMessage)
 	})
 }
+
+func TestContentType(t *testing.T) {
+	const maxMem = 10 * 1024 * 1024
+
+	buildState := func(typ string) *webapi.ApiState {
+		setup := webapitest.NewStateSetup{
+			HttpMethod: http.MethodPost,
+			BodyReader: bytes.NewBuffer([]byte{0}),
+		}
+		if typ != "" {
+			setup.ContentType = typ
+		}
+		state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, "/", setup)
+		state.RawRequest.ParseMultipartForm(maxMem)
+		ContentType.Setup(state)
+		return state
+	}
+
+	t.Run("empty", func(t *testing.T) {
+		state := buildState("")
+		assert.Len(t, state.LogMessage, 0)
+	})
+
+	t.Run("application/json", func(t *testing.T) {
+		state := buildState("application/json")
+		want := []any{
+			"ContentType", "application/json",
+		}
+		assert.Equal(t, want, state.LogMessage)
+	})
+
+	t.Run("multipart/form-data", func(t *testing.T) {
+		state := buildState("multipart/form-data; boundary=something")
+		want := []any{
+			"ContentType", "multipart/form-data",
+		}
+		assert.Equal(t, want, state.LogMessage)
+	})
+}
