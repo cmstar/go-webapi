@@ -195,18 +195,7 @@ var Conv = func() conv.Conv {
 				return
 			}
 
-			content, err := f.ReadAll()
-			if err != nil {
-				return
-			}
-
-			var jsonValue any
-			err = json.Unmarshal(content, &jsonValue)
-			if err != nil {
-				err = fmt.Errorf("unmarshal JSON part '%s': %w", f.Filename, err)
-				return
-			}
-
+			jsonValue := f.JsonValue()
 			result, err = _internalConv.ConvertType(jsonValue, typ)
 			return
 		}
