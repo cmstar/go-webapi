@@ -20,7 +20,7 @@ func TestFilePart_MarshalJSON(t *testing.T) {
 
 		v, err := f.MarshalJSON()
 		require.NoError(t, err)
-		require.Equal(t, `{"FileName":"name","ContentType":"Header1","Size":123}`, string(v))
+		require.Equal(t, `{"$FileName":"name","ContentType":"Header1","Size":3}`, string(v))
 	})
 
 	t.Run("json", func(t *testing.T) {
@@ -35,7 +35,7 @@ func TestFilePart_MarshalJSON(t *testing.T) {
 		require.NoError(t, err)
 
 		// 输出的 JSON key 会被重新排序。
-		require.Equal(t, `{"FileName":"name","ContentType":"application/json","Size":15,"Data":{"Aa":2,"Bb":1}}`, string(v))
+		require.Equal(t, `{"$FileName":"name","ContentType":"application/json","Size":15,"Data":{"Aa":2,"Bb":1}}`, string(v))
 	})
 }
 

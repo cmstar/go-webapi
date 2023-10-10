@@ -99,14 +99,16 @@ func (x *FilePart) MarshalJSON() ([]byte, error) {
 		return res
 	}
 
-	// 对于非 JSON 数据： {"FileName":"name","ContentType":"type","Size":123} ；
-	// 对于 JSON 数据： {"FileName":"name","ContentType":"type","Size":123,"Data":{jsonValue 的序列化结果}} 。
+	// 对于非 JSON 数据： {"$FileName":"name","ContentType":"type","Size":123} ；
+	// 对于 JSON 数据： {"$FileName":"name","ContentType":"type","Size":123,"Data":{jsonValue 的序列化结果}} 。
 	//
 	// 这里重新序列化 jsonValue ，有两个作用：
 	// 1. 移除原文 JSON 里的空白。
 	// 2. 使输出的 JSON key 有序。
+	//
+	// $FileName 以 $ 开头，以避免和一般的参数混淆。
 	buf := new(bytes.Buffer)
-	buf.WriteString(`{"FileName":`)
+	buf.WriteString(`{"$FileName":`)
 	buf.Write(escapeString(x.Filename))
 	buf.WriteString(`,"ContentType":`)
 	buf.Write(escapeString(x.ContentType()))
