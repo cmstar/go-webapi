@@ -86,24 +86,25 @@ func (x *FilePart) ReadAll() (res []byte, err error) {
 // 若当前 part 不具有 Content-Type:application/json ，则 panic 。
 func (x *FilePart) JsonValue() any {
 	if !x.IsJson() {
-		panic("not implemented") // TODO not implemented
+		panic(fmt.Sprintf("require Content-Type: application/json, got %s", x.ContentType()))
 	}
 	return x.jsonValue
 }
 
 // MarshalJSON implements json.Marshaler.
 func (x *FilePart) MarshalJSON() ([]byte, error) {
-	if x.IsJson() {
-		return x.ReadAll()
-	}
-
 	// json 包没有开放字符串转义的方法。只能重复调用 Marshal ，有点费事。
 	escapeString := func(v string) []byte {
 		res, _ := json.Marshal(v)
 		return res
 	}
 
-	// {"FileName":"name","ContentType":"type","Size": 123}
+	// 对于非 JSON 数据： {"FileName":"name","ContentType":"type","Size":123} ；
+	// 对于 JSON 数据： {"FileName":"name","ContentType":"type","Size":123,"Data":{jsonValue 的序列化结果}} 。
+	//
+	// 这里重新序列化 jsonValue ，有两个作用：
+	// 1. 移除原文 JSON 里的空白。
+	// 2. 使输出的 JSON key 有序。
 	buf := new(bytes.Buffer)
 	buf.WriteString(`{"FileName":`)
 	buf.Write(escapeString(x.Filename))
@@ -111,6 +112,16 @@ func (x *FilePart) MarshalJSON() ([]byte, error) {
 	buf.Write(escapeString(x.ContentType()))
 	buf.WriteString(`,"Size":`)
 	buf.Write([]byte(strconv.Itoa(int(x.Size))))
+
+	if x.IsJson() {
+		v, err := json.Marshal(x.jsonValue)
+		if err != nil {
+			panic(err)
+		}
+		buf.WriteString(`,"Data":`)
+		buf.Write(v)
+	}
+
 	buf.WriteString(`}`)
 	return buf.Bytes(), nil
 }

@@ -2,9 +2,13 @@
 package webapitest
 
 import (
+	"bytes"
+	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/textproto"
 	"strings"
 
 	"github.com/cmstar/go-webapi"
@@ -57,4 +61,36 @@ func NewStateForTest(apiHandler webapi.ApiHandler, uri string, setup NewStateSet
 	rec := httptest.NewRecorder()
 	state := webapi.NewState(rec, req, apiHandler)
 	return state, rec
+}
+
+// CreateMultipartFileHeader 根据给定的内容创建一个 multipart.FileHeader 实例。
+func CreateMultipartFileHeader(fieldName, fileName string, body []byte, header map[string]string) *multipart.FileHeader {
+	// 没有提供直接创建 FileHeader 的方法。这里通过 Writer 写出一份数据，再用 Reader 读出来。
+	buf := new(bytes.Buffer)
+	w := multipart.NewWriter(buf)
+
+	mimeHeader := make(textproto.MIMEHeader)
+	mimeHeader.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, fieldName, fileName))
+	for k, v := range header {
+		mimeHeader[k] = []string{v}
+	}
+	file, err := w.CreatePart(mimeHeader)
+	if err != nil {
+		panic(err)
+	}
+	file.Write(body)
+
+	w.Close()
+
+	reader := multipart.NewReader(buf, w.Boundary())
+	form, err := reader.ReadForm(10 << 20)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, v := range form.File {
+		return v[0]
+	}
+
+	panic("something wrong")
 }
