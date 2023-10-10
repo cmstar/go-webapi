@@ -3,6 +3,7 @@ package slimapi
 import (
 	"mime/multipart"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/cmstar/go-webapi"
@@ -23,7 +24,7 @@ func TestFilePart_MarshalJSON(t *testing.T) {
 		require.Equal(t, `{"$FileName":"name","ContentType":"Header1","Size":3}`, string(v))
 	})
 
-	t.Run("json", func(t *testing.T) {
+	t.Run("jsonOK", func(t *testing.T) {
 		body := []byte(`{"Bb":1,"Aa":2}`)
 		fh := webapitest.CreateMultipartFileHeader("name", "name", body, map[string]string{
 			webapi.HttpHeaderContentType: webapi.ContentTypeJson,
@@ -36,6 +37,16 @@ func TestFilePart_MarshalJSON(t *testing.T) {
 
 		// 输出的 JSON key 会被重新排序。
 		require.Equal(t, `{"$FileName":"name","ContentType":"application/json","Size":15,"Data":{"Aa":2,"Bb":1}}`, string(v))
+	})
+
+	t.Run("jsonBadFormat", func(t *testing.T) {
+		body := []byte(`xx`)
+		fh := webapitest.CreateMultipartFileHeader("name", "name", body, map[string]string{
+			webapi.HttpHeaderContentType: webapi.ContentTypeJson,
+		})
+		_, err := NewFilePart(fh)
+		require.Error(t, err)
+		require.True(t, strings.HasPrefix(err.Error(), "unmarshal JSON part 'name': "), err.Error())
 	})
 }
 
