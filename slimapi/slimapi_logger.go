@@ -29,8 +29,8 @@ func NewSlimApiLogger() webapi.LogSetupPipeline {
 	return webapi.NewLogSetupPipeline(
 		logsetup.IP,
 		logsetup.URL,
+		logsetup.ContentType,
 		LogBody,
-		logsetup.Files,
 		logsetup.Error,
 	)
 }
