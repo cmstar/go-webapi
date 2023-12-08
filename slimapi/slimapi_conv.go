@@ -17,9 +17,9 @@ import (
 // FilePart 用于封装一个 *multipart.FileHeader ，用于 [Conv] 对象进行类型转换，
 // 以支持 multipart/form-data 方式的参数及文件上传。
 type FilePart struct {
-	*multipart.FileHeader
-	content   []byte
-	jsonValue any
+	*multipart.FileHeader        // 原始的 FileHeader 。
+	content               []byte // 数据部分被读取后，存储在这里。
+	jsonValue             any    // 对于 application/json 类型的数据， 读取并 json.Unmarshal 然后存储在这里。
 }
 
 var _ json.Marshaler = (*FilePart)(nil)
@@ -65,7 +65,12 @@ func (x *FilePart) IsJson() bool {
 }
 
 // ReadAll 读取当前 part 的全部数据。
+// 此方法可被重复调用。
 func (x *FilePart) ReadAll() (res []byte, err error) {
+	if x.content != nil {
+		return x.content, nil
+	}
+
 	f, err := x.Open()
 	if err != nil {
 		err = fmt.Errorf("open file part '%s': %w", x.Filename, err)
@@ -91,7 +96,7 @@ func (x *FilePart) JsonValue() any {
 	return x.jsonValue
 }
 
-// MarshalJSON implements json.Marshaler.
+// MarshalJSON 实现 json.Marshaler 。它以 JSON 形式返回对于当前 FilePart 的描述信息。
 func (x *FilePart) MarshalJSON() ([]byte, error) {
 	// json 包没有开放字符串转义的方法。只能重复调用 Marshal ，有点费事。
 	escapeString := func(v string) []byte {
