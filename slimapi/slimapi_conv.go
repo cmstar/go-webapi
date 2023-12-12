@@ -154,12 +154,28 @@ var _internalConv = conv.Conv{Conf: _convConf}
 var Conv = func() conv.Conv {
 	_convConf.CustomConverters = func() []conv.ConvertFunc {
 		var (
+			typFilePart   = reflect.TypeOf(&FilePart{})
 			typFileHeader = reflect.TypeOf(&multipart.FileHeader{})
 			typByteSlice  = reflect.TypeOf([]byte{})
 		)
 
+		// *FilePart -> *FilePart 原样返回。
+		filePartToFilePart := func(value interface{}, typ reflect.Type) (result interface{}, err error) {
+			if typ != typFilePart {
+				return
+			}
+
+			f, ok := value.(*FilePart)
+			if !ok {
+				err = fmt.Errorf("require *slimapi.FilePart, got %T", value)
+				return
+			}
+
+			return f, nil
+		}
+
 		// *FilePart -> *multipart.FileHeader 原样返回被封装值。
-		fileHeaderToFileHeader := func(value interface{}, typ reflect.Type) (result interface{}, err error) {
+		filePartToFileHeader := func(value interface{}, typ reflect.Type) (result interface{}, err error) {
 			if typ != typFileHeader {
 				return
 			}
@@ -174,7 +190,7 @@ var Conv = func() conv.Conv {
 		}
 
 		// *FilePart -> []byte
-		fileHeaderToBytes := func(value interface{}, typ reflect.Type) (result interface{}, err error) {
+		filePartToBytes := func(value interface{}, typ reflect.Type) (result interface{}, err error) {
 			if typ != typByteSlice {
 				return
 			}
@@ -188,7 +204,7 @@ var Conv = func() conv.Conv {
 		}
 
 		// *FilePart as JSON -> any
-		jsonFileHeaderToAny := func(value interface{}, typ reflect.Type) (result interface{}, err error) {
+		jsonFilePartToAny := func(value interface{}, typ reflect.Type) (result interface{}, err error) {
 			f, ok := value.(*FilePart)
 			if !ok || !f.IsJson() {
 				return
@@ -200,9 +216,10 @@ var Conv = func() conv.Conv {
 		}
 
 		return []conv.ConvertFunc{
-			fileHeaderToFileHeader,
-			fileHeaderToBytes,
-			jsonFileHeaderToAny,
+			filePartToFilePart,
+			filePartToFileHeader,
+			filePartToBytes,
+			jsonFilePartToAny,
 		}
 	}()
 

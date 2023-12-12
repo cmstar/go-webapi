@@ -59,3 +59,13 @@ func TestConv_filePartToFileHeader(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, fh, res)
 }
+
+func TestConv_filePartToFilePart(t *testing.T) {
+	fh := &multipart.FileHeader{Size: 100}
+	part, err := NewFilePart(fh)
+	require.NoError(t, err)
+
+	res, err := Conv.ConvertType(part, reflect.TypeOf(part))
+	require.NoError(t, err)
+	require.Equal(t, part, res)
+}
