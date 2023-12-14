@@ -160,6 +160,8 @@ GET http://localhost:15001/api/err?bizErr=false&value=my-value
 }
 ```
 
+如果需要接收上传的文件，参考 WIKI 页 [上传文件](https://github.com/cmstar/go-webapi/wiki/%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6) 。
+
 ## 错误处理
 
 表示 WebAPI 的方法支持0-2个返回值（详见[GoDoc](https://pkg.go.dev/github.com/cmstar/go-webapi#ApiMethodRegister)）。
