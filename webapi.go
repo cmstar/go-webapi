@@ -69,6 +69,22 @@ type ApiHandlerWrapper struct {
 
 var _ ApiHandler = (*ApiHandlerWrapper)(nil)
 
+// Wrap 将一个 ApiHandler 包装为 *ApiHandlerWrapper ，用于“重写”其中的方法。
+func Wrap(h ApiHandler) *ApiHandlerWrapper {
+	return &ApiHandlerWrapper{
+		ApiMethodRegister:   h,
+		ApiNameResolver:     h,
+		ApiUserHostResolver: h,
+		ApiDecoder:          h,
+		ApiMethodCaller:     h,
+		ApiResponseBuilder:  h,
+		ApiResponseWriter:   h,
+		ApiLogger:           h,
+		HandlerName:         h.Name(),
+		HttpMethods:         h.SupportedHttpMethods(),
+	}
+}
+
 // SupportedHttpMethods 实现 ApiHandler.SupportedHttpMethods() 。
 func (w *ApiHandlerWrapper) SupportedHttpMethods() []string {
 	return w.HttpMethods
