@@ -40,10 +40,9 @@ func (p LogSetupPipeline) Log(state *ApiState) {
 		v.Setup(state)
 	}
 
-	lv := state.LogLevel
 	if state.LogLevel == 0 {
-		lv = logx.LevelInfo
+		state.LogLevel = logx.LevelInfo
 	}
 
-	logger.Log(lv, "", state.LogMessage...)
+	logger.Log(state.LogLevel, "", state.LogMessage...)
 }

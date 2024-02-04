@@ -49,7 +49,8 @@ type ApiState struct {
 	// 若方法没有返回值，此字段为 nil 。
 	Data any
 
-	// 输出日志时的日志级别。若为 0 ，则使用默认级别（由 [ApiLogger] 决定）。
+	// 用于定制输出日志时的日志级别，用于 [ApiLogger] 的日志输出。
+	// 若 [ApiLogger.Log] 被调用前没有被赋值（为 0），则 Log 方法被调用后，应将其最终决定使用的级别回填到此字段。
 	LogLevel logx.Level
 
 	// LogMessage 用于记录各个处理流程中的日志信息，用于在 [ApiLogger] 中的输出。
