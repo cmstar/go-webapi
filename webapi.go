@@ -218,7 +218,7 @@ func (f ApiResponseBuilderFunc) BuildResponse(state *ApiState) {
 	f(state)
 }
 
-// ApiResponseWriter 处理 ApiMethodCaller 的处理结果，获得实际需要返回的数据，填入 Response* （以 Response 开头）字段。
+// ApiResponseWriter 处理 [ApiResponseBuilder] 的处理结果，获得实际需要返回的数据，填入 Response* （以 Response 开头）字段。
 type ApiResponseWriter interface {
 	// 处理 ApiState.Response ，获得实际需要返回的数据，填入 ApiState.Response* （以 Response 开头）字段。
 	// 此方法执行之后， ApiState 中以 Response 开头字段，如 ResponseBody 、 ResponseContentType ，
