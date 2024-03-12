@@ -21,8 +21,15 @@ func NewSlimApiResponseWriter() webapi.ApiResponseWriter {
 func (*slimApiResponseWriter) WriteResponse(state *webapi.ApiState) {
 	/*
 	 * GO 的字符串都是 UTF-8 编码，和 SlimAPI 的要求一致，没有转码需要。
-	 * ApiState.ResponseContentType 应在 slimApiNameResolver 中完成初始化，这里不用再处理。
+	 * ApiState.ResponseContentType 应在 slimApiNameResolver 中完成初始化，这里仅做最后的防御。
 	 */
+	if state.ResponseContentType == "" {
+		state.ResponseContentType = "text/plain"
+	}
+
+	if state.ResponseBody != nil {
+		return
+	}
 
 	state.MustHaveResponse()
 
