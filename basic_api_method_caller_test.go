@@ -207,13 +207,6 @@ func compareError(t *testing.T, expected, got error) {
 		return
 	}
 
-	if expectedBizErr == nil {
-		if gotBizErr == nil {
-			t.Errorf("expect BizError, got %T", got)
-			return
-		}
-	}
-
 	if expectedBizErr.Code() != gotBizErr.Code() {
 		t.Errorf("expect error-code %v, got %v", expectedBizErr.Code(), gotBizErr.Code())
 	}
