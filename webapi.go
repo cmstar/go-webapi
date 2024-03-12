@@ -278,6 +278,13 @@ func CreateHandlerFunc(handler ApiHandler, logFinder logx.LogFinder) http.Handle
 			if err != nil {
 				PanicApiError(state, err, "write response body")
 			}
+
+			if closer, ok := state.ResponseBody.(io.Closer); ok {
+				err = closer.Close()
+				if err != nil {
+					PanicApiError(state, err, "close response reader")
+				}
+			}
 		}
 
 		handler.Log(state)

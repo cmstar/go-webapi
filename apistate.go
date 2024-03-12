@@ -67,6 +67,7 @@ type ApiState struct {
 	Response *ApiResponse[any]
 
 	// ResponseBody 提供实际返回的 HTTP body 的数据。若为 nil ，则 HTTP 没有 body 。
+	// 若实现了 io.ReaderCloser ，则完成 HTTP body 的写入后，会被自动 Close 。
 	ResponseBody io.Reader
 
 	// ResponseContentType 对应为返回的 HTTP 的 Content-Type 头的值。
