@@ -47,7 +47,7 @@ func (x SlimApiInvoker[TParam, TData]) MustDoRaw(params TParam) webapi.ApiRespon
 // 请求总是以 Content-Type: application/json 方式发送， params 是请求的参数，需能够被 JSON 序列化。
 func (x SlimApiInvoker[TParam, TData]) DoRaw(params TParam) (res webapi.ApiResponse[TData], err error) {
 	wrapErr := func(cause error) error {
-		return fmt.Errorf(`request "%s": %w`, x.Uri, err)
+		return fmt.Errorf(`request "%s": %w`, x.Uri, cause)
 	}
 
 	in, err := json.Marshal(params)
