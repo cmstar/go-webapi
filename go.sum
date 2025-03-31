@@ -1,5 +1,5 @@
-github.com/cmstar/go-conv v0.6.1 h1:qZoKMxAiqarztI9IZAqzlr2xZRiiV26zzjFeaR45bfI=
-github.com/cmstar/go-conv v0.6.1/go.mod h1:vc836gwYz4cI2oCWdL/EF514eEjTDpXmTBvfZEELdXs=
+github.com/cmstar/go-conv v0.6.3 h1:MlfQ+xzpCZ6VAE2QiDuwIhpgHi3PlqGbDWHi87/CDtU=
+github.com/cmstar/go-conv v0.6.3/go.mod h1:vc836gwYz4cI2oCWdL/EF514eEjTDpXmTBvfZEELdXs=
 github.com/cmstar/go-errx v1.5.0 h1:oRVLrlWDnbayAYHtLzBPh73lwzFCYyR5r+RtLzQbXtA=
 github.com/cmstar/go-errx v1.5.0/go.mod h1:q9VjJpK9+y2r533Ud7hp+LsY2IjqkaC0XQ/ZTrG5vFI=
 github.com/cmstar/go-logx v1.4.0 h1:fSFq0KYLfJmHsr4tzAfhgU3MxqzYBUQnu2f7iT9xrDM=
