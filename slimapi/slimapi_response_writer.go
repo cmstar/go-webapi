@@ -31,10 +31,13 @@ func (*slimApiResponseWriter) WriteResponse(state *webapi.ApiState) {
 		return
 	}
 
-	state.MustHaveResponse()
+	response := state.Handler.BuildResponse(state, state.Data, state.Error)
+	if response == nil {
+		return
+	}
 
 	// 序列化可能报错，放在前面先处理。
-	jsonBody, err := json.Marshal(&state.Response)
+	jsonBody, err := json.Marshal(response)
 	if err != nil {
 		webapi.PanicApiError(state, err, "json encoding error")
 	}

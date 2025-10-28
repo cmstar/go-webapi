@@ -60,11 +60,7 @@ type ApiState struct {
 
 	// Error 记录 ApiMethodCaller.Call() 方法所调用的具体 WebAPI 方法返回的 error 值；
 	// 或记录 ApiDecoder 和 ApiMethodCaller 处理过程中 panic 的错误。没有错误时为 nil 。
-	// ApiResponseBuilder.BuildResponse() 能够将此错误转换为对应的 ApiResponse 。
 	Error error
-
-	// Response 记录 WebAPI 返回的结果的抽象结构。
-	Response *ApiResponse[any]
 
 	// ResponseBody 提供实际返回的 HTTP body 的数据。若为 nil ，则 HTTP 没有 body 。
 	// 若实现了 io.ReaderCloser ，则完成 HTTP body 的写入后，会被自动 Close 。
@@ -103,13 +99,6 @@ func (s *ApiState) MustHaveMethod() {
 
 	if s.Method.Value.Type().Kind() != reflect.Func {
 		PanicApiError(s, nil, "the value of ApiState.Method must be Func")
-	}
-}
-
-// MustHaveResponse checks the Response field, panics if the field is not initialized.
-func (s *ApiState) MustHaveResponse() {
-	if s.Response == nil {
-		PanicApiError(s, nil, "ApiState.Response not initialized")
 	}
 }
 

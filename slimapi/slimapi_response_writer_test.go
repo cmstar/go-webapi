@@ -34,7 +34,12 @@ func Test_slimApiResponseWriter_WriteResponse(t *testing.T) {
 			}
 
 			state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, "/", webapitest.NewStateSetup{})
-			state.Response = a.response
+			state.Handler = &webapi.ApiHandlerWrapper{
+				ApiResponseBuilder: webapi.ApiResponseBuilderFunc(func(state *webapi.ApiState, callResult any, callError error) any {
+					return a.response
+				}),
+			}
+
 			if a.callback != "" {
 				setCallback(state, a.callback)
 			}
@@ -77,10 +82,6 @@ func Test_slimApiResponseWriter_WriteResponse(t *testing.T) {
 		callback:         "cb_name",
 		wantBody:         `cb_name({"Code":0,"Message":"","Data":""})`,
 		wantPanicPattern: "",
-	})
-
-	testOne("panic-no-response", args{
-		wantPanicPattern: "Response not initialized",
 	})
 
 	testOne("panic-json-marshal", args{

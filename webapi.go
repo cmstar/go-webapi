@@ -24,9 +24,10 @@ import (
 //   - ApiNameResolver
 //   - ApiDecoder
 //   - ApiMethodCaller
-//   - ApiResponseBuilder
 //   - ApiResponseWriter
 //   - ApiLogger
+//
+// ApiResponseBuilder 通常由 ApiResponseWriter 在执行期间调用。
 //
 // ApiMethodRegister 仅在注册阶段使用，在响应请求的过程中不会被调用。
 type ApiHandler interface {
@@ -204,18 +205,25 @@ func (f ApiMethodCallerFunc) Call(state *ApiState) {
 	f(state)
 }
 
-// ApiResponseBuilder 处理 ApiDecoder 和 ApiMethodCaller 执行过程中产生的错误。
+// ApiResponseBuilder 用于将前置过程的执行结果组装为最终的响应结果。
+//
+// 组装过程通常发生在 [ApiResponseWriter.WriteResponse] 执行期间。
 type ApiResponseBuilder interface {
-	// BuildResponse 根据 ApiState.Data 和 ApiState.Error ，填写 ApiState.Response 。
-	BuildResponse(state *ApiState)
+	// BuildResponse 根据给定的 callResult 和 callError ，生成一个用于 [ApiResponseWriter.WriteResponse] 输出的结果。
+	// 若返回 nil ，则表示无输出。
+	//
+	// callResult/callError 通常是 [ApiMethodCaller.Call] 的处理结果，或是处理结果的一个片段。
+	//
+	// 返回的结果应该可被序列化为 HTTP body 的数据。默认的类型为 [ApiResponse] 。
+	BuildResponse(state *ApiState, callResult any, callError error) any
 }
 
 // ApiResponseBuilderFunc 用于将函数适配到 [ApiResponseBuilder] 。
-type ApiResponseBuilderFunc func(state *ApiState)
+type ApiResponseBuilderFunc func(state *ApiState, callResult any, callError error) any
 
 // BuildResponse 实现 [ApiResponseBuilder.BuildResponse] 。
-func (f ApiResponseBuilderFunc) BuildResponse(state *ApiState) {
-	f(state)
+func (f ApiResponseBuilderFunc) BuildResponse(state *ApiState, callResult any, callError error) any {
+	return f(state, callResult, callError)
 }
 
 // ApiResponseWriter 处理 [ApiResponseBuilder] 的处理结果，获得实际需要返回的数据，填入 Response* （以 Response 开头）字段。
@@ -267,7 +275,6 @@ func CreateHandlerFunc(handler ApiHandler, logFinder logx.LogFinder) http.Handle
 			// 尝试清空返回值，再输出一次。 state.Error 则被保留下来，能够体现哪里出错。
 			// 如果再 panic 就拯救不了了，交给外层框架处理。
 			state.Data = nil
-			handler.BuildResponse(state)
 			handler.WriteResponse(state)
 		}
 
@@ -320,7 +327,6 @@ func handleRequest(state *ApiState, handler ApiHandler, logFinder logx.LogFinder
 
 func handleResponse(state *ApiState, handler ApiHandler, logFinder logx.LogFinder) bool {
 	defer handlePanic(state, handler, logFinder)
-	handler.BuildResponse(state)
 	handler.WriteResponse(state)
 	return true
 }

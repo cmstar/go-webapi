@@ -66,8 +66,8 @@ func setupApiHandlerWrapper(w *ApiHandlerWrapper) *ApiHandlerWrapper {
 	}
 
 	if w.ApiResponseBuilder == nil {
-		w.ApiResponseBuilder = ApiResponseBuilderFunc(func(state *ApiState) {
-			state.Response = &ApiResponse[any]{Data: state.Data}
+		w.ApiResponseBuilder = ApiResponseBuilderFunc(func(state *ApiState, callResult any, callError error) any {
+			return &ApiResponse[any]{Data: callResult}
 		})
 	}
 
@@ -161,10 +161,9 @@ func TestCreateHandlerFunc_panic(t *testing.T) {
 		p := false
 
 		handlerFunc := createHandlerFuncForTest(&ApiHandlerWrapper{
-			ApiResponseBuilder: ApiResponseBuilderFunc(func(state *ApiState) {
+			ApiMethodCaller: ApiMethodCallerFunc(func(state *ApiState) {
 				s = state
-
-				// ApiResponseBuilder 有两次调用，一次是正常流程，一次是 panic 后用于处理错误的。
+				// 两次调用，一次是正常流程，一次是 panic 后用于处理错误的。
 				// 这里让正常流程 panic ，错误处理流程（第二次）则不会报错，否则整个请求就崩溃了。
 				if p {
 					return

@@ -17,32 +17,32 @@ func NewBasicApiResponseBuilder() ApiResponseBuilder {
 }
 
 // BuildResponse implements ApiResponseBuilder.BuildResponse
-func (r *basicApiResponseBuilder) BuildResponse(state *ApiState) {
-	resp := &ApiResponse[any]{
-		Data: state.Data,
+func (r *basicApiResponseBuilder) BuildResponse(state *ApiState, callResult any, callError error) any {
+	resp := ApiResponse[any]{
+		Data: callResult,
 	}
-	state.Response = resp
 
-	if state.Error == nil {
-		return
+	if callError == nil {
+		return resp
 	}
 
 	// ApiResponse 内容是返回给请求者的，不应该暴露内部细节，只有 BizError 是和具体业务高度关联的，
 	// 可以给出具体信息；对于其他错误，只给一个笼统的信息。
 	var bizErr errx.BizError
-	if errors.As(state.Error, &bizErr) {
+	if errors.As(callError, &bizErr) {
 		resp.Code = bizErr.Code()
 		resp.Message = bizErr.Message()
-		return
+		return resp
 	}
 
 	var badRequestErr BadRequestError
-	if errors.As(state.Error, &badRequestErr) {
+	if errors.As(callError, &badRequestErr) {
 		resp.Code = ErrorCodeBadRequest
 		resp.Message = badRequestErr.Message
-		return
+		return resp
 	}
 
 	resp.Code = ErrorCodeInternalError
 	resp.Message = "internal error"
+	return resp
 }

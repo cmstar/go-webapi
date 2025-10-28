@@ -131,7 +131,7 @@ func Test_basicApiMethodCaller_Call(t *testing.T) {
 			caller.Call(state)
 
 			if !reflect.DeepEqual(tt.data, state.Data) {
-				t.Errorf("expected response %v, got %v", tt.data, state.Response)
+				t.Errorf("expected response %v, got %v", tt.data, state.Data)
 			}
 
 			compareError(t, tt.err, state.Error)
