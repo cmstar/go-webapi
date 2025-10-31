@@ -4,7 +4,6 @@ package webapi
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"reflect"
 
@@ -281,20 +280,44 @@ func CreateHandlerFunc(handler ApiHandler, logFinder logx.LogFinder) http.Handle
 		w.Header().Set(string(HttpHeaderContentType), string(state.ResponseContentType))
 
 		if state.ResponseBody != nil {
-			_, err := io.Copy(w, state.ResponseBody)
-			if err != nil {
-				PanicApiError(state, err, "write response body")
-			}
-
-			if closer, ok := state.ResponseBody.(io.Closer); ok {
-				err = closer.Close()
-				if err != nil {
-					PanicApiError(state, err, "close response reader")
-				}
-			}
+			// 此处若发生 panic ，由最外层的 Recoverer 中间件处理。
+			doWriteResponse(state, w)
 		}
 
 		handler.Log(state)
+	}
+}
+
+func doWriteResponse(state *ApiState, w http.ResponseWriter) {
+	flusher, canFlush := w.(http.Flusher)
+	var ignorePanic bool
+
+	defer func() {
+		if ignorePanic {
+			return
+		}
+
+		err := errx.PreserveRecover("", recover())
+		if err != nil {
+			PanicApiError(state, err, "write response body")
+		}
+	}()
+
+	// 此处错误由最外层的 Recoverer 中间件处理。
+	for data := range state.ResponseBody {
+		if len(data) == 0 {
+			continue
+		}
+
+		_, err := w.Write(data)
+		if err != nil {
+			ignorePanic = true
+			PanicApiError(state, err, "write response body")
+		}
+
+		if canFlush {
+			flusher.Flush()
+		}
 	}
 }
 

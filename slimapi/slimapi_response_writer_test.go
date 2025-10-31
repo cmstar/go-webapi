@@ -1,7 +1,6 @@
 package slimapi
 
 import (
-	"io"
 	"testing"
 
 	"github.com/cmstar/go-webapi"
@@ -45,8 +44,11 @@ func Test_slimApiResponseWriter_WriteResponse(t *testing.T) {
 			}
 			instance.WriteResponse(state)
 
-			body, err := io.ReadAll(state.ResponseBody)
-			require.NoError(t, err)
+			var body []byte
+			state.ResponseBody(func(block []byte) bool {
+				body = append(body, block...)
+				return true
+			})
 			assert.Equal(t, a.wantBody, string(body))
 		})
 	}

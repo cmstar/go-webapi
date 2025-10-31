@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/cmstar/go-errx"
@@ -74,7 +73,9 @@ func setupApiHandlerWrapper(w *ApiHandlerWrapper) *ApiHandlerWrapper {
 	if w.ApiResponseWriter == nil {
 		w.ApiResponseWriter = ApiResponseWriterFunc(func(state *ApiState) {
 			state.ResponseContentType = "custom"
-			state.ResponseBody = strings.NewReader("body")
+			state.ResponseBody = func(yield func([]byte) bool) {
+				yield([]byte("body"))
+			}
 		})
 	}
 

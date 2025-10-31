@@ -59,5 +59,7 @@ func (*slimApiResponseWriter) WriteResponse(state *webapi.ApiState) {
 		buf.WriteByte(')')
 	}
 
-	state.ResponseBody = buf
+	state.ResponseBody = func(yield func(block []byte) bool) {
+		yield(buf.Bytes())
+	}
 }
