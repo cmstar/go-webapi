@@ -62,7 +62,14 @@ type ApiState struct {
 	// 或记录 ApiDecoder 和 ApiMethodCaller 处理过程中 panic 的错误。没有错误时为 nil 。
 	Error error
 
-	// ResponseBody 提供实际返回的 HTTP body 的数据。若为 nil ，则 HTTP 没有 body 。
+	// ResponseBody 提供实际返回的 HTTP body 的数据。若为 nil ，则 HTTP body 为空。
+	//
+	// 这是一个迭代器，若 [http.ResponseWriter] 实现了 [http.Flusher] ，则每轮迭代返回的结果均会立刻触发 flush 。
+	// flush 完成后，才继续下一轮迭代。
+	//
+	// 使用此机制，可实现 HTTP response 的流式输出。
+	//
+	// 若某轮迭代返回的 slice 长度为0，则该结果不会触发输出，迭代应继续执行。若所有轮次均返回空 slice ，则 HTTP body 为空。
 	ResponseBody iter.Seq[[]byte]
 
 	// ResponseContentType 对应为返回的 HTTP 的 Content-Type 头的值。

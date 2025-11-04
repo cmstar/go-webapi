@@ -18,7 +18,22 @@ func NewSlimApiResponseWriter() webapi.ApiResponseWriter {
 }
 
 // WriteResponse 实现 webapi.ApiResponseWriter.WriteResponse 。
-func (*slimApiResponseWriter) WriteResponse(state *webapi.ApiState) {
+func (x *slimApiResponseWriter) WriteResponse(state *webapi.ApiState) {
+	if state.ResponseBody != nil {
+		return
+	}
+
+	// 分为流式和非流式两种情况。如果是流式，则强制使用其自带的 Content-Type 和格式。
+	streamingResponse, ok := state.Data.(webapi.StreamingResponse)
+	if ok {
+		x.writeStreamingResponse(state, streamingResponse)
+		return
+	} else {
+		x.writeGenericResponse(state)
+	}
+}
+
+func (x *slimApiResponseWriter) writeGenericResponse(state *webapi.ApiState) {
 	/*
 	 * GO 的字符串都是 UTF-8 编码，和 SlimAPI 的要求一致，没有转码需要。
 	 * ApiState.ResponseContentType 应在 slimApiNameResolver 中完成初始化，这里仅做最后的防御。
@@ -27,19 +42,9 @@ func (*slimApiResponseWriter) WriteResponse(state *webapi.ApiState) {
 		state.ResponseContentType = "text/plain"
 	}
 
-	if state.ResponseBody != nil {
-		return
-	}
-
-	response := state.Handler.BuildResponse(state, state.Data, state.Error)
+	response := x.buildJsonResponse(state, state.Data, state.Error)
 	if response == nil {
 		return
-	}
-
-	// 序列化可能报错，放在前面先处理。
-	jsonBody, err := json.Marshal(response)
-	if err != nil {
-		webapi.PanicApiError(state, err, "json encoding error")
 	}
 
 	buf := new(bytes.Buffer)
@@ -52,14 +57,52 @@ func (*slimApiResponseWriter) WriteResponse(state *webapi.ApiState) {
 	}
 
 	// -> callback(body
-	buf.Write(jsonBody)
+	buf.Write(response)
 
 	// -> callback(body)
 	if callback != "" {
 		buf.WriteByte(')')
 	}
 
-	state.ResponseBody = func(yield func(block []byte) bool) {
+	state.ResponseBody = func(yield func([]byte) bool) {
 		yield(buf.Bytes())
 	}
+}
+
+func (x *slimApiResponseWriter) writeStreamingResponse(state *webapi.ApiState, streaming webapi.StreamingResponse) {
+	state.ResponseContentType = streaming.ContentType()
+
+	state.ResponseBody = func(yield func([]byte) bool) {
+		// 因为 ResponseBody 的迭代是串行的，这里可以复用同一个 buf 以提高性能。
+		buf := new(bytes.Buffer)
+
+		for data, err := range streaming.Iter() {
+			response := x.buildJsonResponse(state, data, err)
+			if response == nil {
+				continue
+			}
+
+			streaming.WriteJsonBlock(buf, response)
+			seg := buf.Bytes()
+			if !yield(seg) {
+				break
+			}
+
+			buf.Reset()
+		}
+	}
+}
+
+func (x *slimApiResponseWriter) buildJsonResponse(state *webapi.ApiState, callResult any, callError error) []byte {
+	response := state.Handler.BuildResponse(state, callResult, callError)
+	if response == nil {
+		return nil
+	}
+
+	b, err := json.Marshal(response)
+	if err != nil {
+		webapi.PanicApiError(state, err, "json encoding error")
+	}
+
+	return b
 }

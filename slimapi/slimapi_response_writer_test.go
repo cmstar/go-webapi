@@ -11,85 +11,110 @@ import (
 
 func Test_slimApiResponseWriter_WriteResponse(t *testing.T) {
 	type args struct {
-		response         *webapi.ApiResponse[any]
+		callData         any
 		callback         string
-		wantBody         string
+		wantBody         []string
 		wantPanicPattern string
 	}
+	testOne := func(a args) {
+		if a.wantPanicPattern != "" {
+			defer func() {
+				recovered := recover()
+				require.NotNil(t, recovered)
 
-	instance := NewSlimApiResponseWriter()
-	testOne := func(name string, a args) {
-		t.Run(name, func(t *testing.T) {
-			if a.wantPanicPattern != "" {
-				defer func() {
-					recovered := recover()
-					require.NotNil(t, recovered)
+				err, ok := recovered.(webapi.ApiError)
+				require.True(t, ok, "must be a webapi.ApiError, got %T", recovered)
 
-					err, ok := recovered.(webapi.ApiError)
-					require.True(t, ok, "must be a webapi.ApiError, got %T", recovered)
+				assert.Regexp(t, a.wantPanicPattern, err.Error())
+			}()
+		}
 
-					assert.Regexp(t, a.wantPanicPattern, err.Error())
-				}()
-			}
+		state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, "/", webapitest.NewStateSetup{})
+		state.Data = a.callData
+		state.Handler = &webapi.ApiHandlerWrapper{
+			ApiResponseBuilder: webapi.NewBasicApiResponseBuilder(),
+		}
 
-			state, _ := webapitest.NewStateForTest(webapitest.NoOpHandler, "/", webapitest.NewStateSetup{})
-			state.Handler = &webapi.ApiHandlerWrapper{
-				ApiResponseBuilder: webapi.ApiResponseBuilderFunc(func(state *webapi.ApiState, callResult any, callError error) any {
-					return a.response
-				}),
-			}
+		if a.callback != "" {
+			setCallback(state, a.callback)
+		}
+		NewSlimApiResponseWriter().WriteResponse(state)
 
-			if a.callback != "" {
-				setCallback(state, a.callback)
-			}
-			instance.WriteResponse(state)
-
-			var body []byte
-			state.ResponseBody(func(block []byte) bool {
-				body = append(body, block...)
-				return true
-			})
-			assert.Equal(t, a.wantBody, string(body))
+		var body []string
+		state.ResponseBody(func(block []byte) bool {
+			body = append(body, string(block))
+			return true
 		})
+		assert.Equal(t, a.wantBody, body)
 	}
 
-	testOne("empty", args{
-		response: &webapi.ApiResponse[any]{
-			Code:    0,
-			Message: "",
-			Data:    "",
-		},
-		callback:         "",
-		wantBody:         `{"Code":0,"Message":"","Data":""}`,
-		wantPanicPattern: "",
+	t.Run("Empty", func(t *testing.T) {
+		testOne(args{
+			callData:         "",
+			callback:         "",
+			wantBody:         []string{`{"Code":0,"Message":"","Data":""}`},
+			wantPanicPattern: "",
+		})
 	})
 
-	testOne("ok", args{
-		response: &webapi.ApiResponse[any]{
-			Code:    0,
-			Message: "",
-			Data:    map[string]int{"a": 1, "b": 2},
-		},
-		callback:         "",
-		wantBody:         `{"Code":0,"Message":"","Data":{"a":1,"b":2}}`,
-		wantPanicPattern: "",
+	t.Run("OK", func(t *testing.T) {
+		testOne(args{
+			callData:         map[string]int{"a": 1, "b": 2},
+			callback:         "",
+			wantBody:         []string{`{"Code":0,"Message":"","Data":{"a":1,"b":2}}`},
+			wantPanicPattern: "",
+		})
 	})
 
-	testOne("callback", args{
-		response: &webapi.ApiResponse[any]{
-			Code:    0,
-			Message: "",
-			Data:    "",
-		},
-		callback:         "cb_name",
-		wantBody:         `cb_name({"Code":0,"Message":"","Data":""})`,
-		wantPanicPattern: "",
+	t.Run("Callback", func(t *testing.T) {
+		testOne(args{
+			callData:         map[string]int{"a": 1, "b": 2},
+			callback:         "cb_name",
+			wantBody:         []string{`cb_name({"Code":0,"Message":"","Data":{"a":1,"b":2}})`},
+			wantPanicPattern: "",
+		})
 	})
 
-	testOne("panic-json-marshal", args{
-		response: &webapi.ApiResponse[any]{
-			Data: make(chan int),
-		},
-		wantPanicPattern: "json encoding error",
+	t.Run("Panic", func(t *testing.T) {
+		testOne(args{
+			callData:         make(chan int),
+			wantPanicPattern: "json encoding error",
+		})
+	})
+
+	t.Run("EventStream", func(t *testing.T) {
+		testOne(args{
+			callData: webapi.EventStream[int](func(yield func(data int, err error) bool) {
+				for _, v := range []int{1, 2, 3} {
+					if !yield(v, nil) {
+						return
+					}
+				}
+			}),
+			wantBody: []string{
+				`data: {"Code":0,"Message":"","Data":1}` + "\n\n",
+				`data: {"Code":0,"Message":"","Data":2}` + "\n\n",
+				`data: {"Code":0,"Message":"","Data":3}` + "\n\n",
+			},
+			wantPanicPattern: "",
+		})
+	})
+
+	t.Run("NdJson", func(t *testing.T) {
+		testOne(args{
+			callData: webapi.NdJson[string](func(yield func(data string, err error) bool) {
+				for _, v := range []string{"a", "b", "c"} {
+					if !yield(v, nil) {
+						return
+					}
+				}
+			}),
+			wantBody: []string{
+				`{"Code":0,"Message":"","Data":"a"}` + "\n",
+				`{"Code":0,"Message":"","Data":"b"}` + "\n",
+				`{"Code":0,"Message":"","Data":"c"}` + "\n",
+			},
+			wantPanicPattern: "",
+		})
 	})
 }

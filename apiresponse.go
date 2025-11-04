@@ -21,6 +21,12 @@ const (
 
 	// ContentTypeMultipartForm 对应 Content-Type: multipart/form-data 的值。
 	ContentTypeMultipartForm = "multipart/form-data"
+
+	// ContentTypeEventStream 对应 Content-Type: text/event-stream 的值。
+	ContentTypeEventStream = "text/event-stream"
+
+	// ContentTypeNdJson 对应 Content-Type: application/x-ndjson 的值。
+	ContentTypeNdJson = "application/x-ndjson"
 )
 
 const (
