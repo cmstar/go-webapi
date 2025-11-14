@@ -274,15 +274,26 @@ func CreateHandlerFunc(handler ApiHandler, logFinder logx.LogFinder) http.Handle
 		w.Header().Set(string(HttpHeaderContentType), string(state.ResponseContentType))
 
 		if state.ResponseBody != nil {
+			// 若无法正确输出（最常见的是连接已断开），则留下一段额外的日志，并尝试将日志级别提升到 warn 。
+			onWriteError := func(err error) {
+				state.LogMessage = append(state.LogMessage,
+					"WriteResponseError", err,
+				)
+
+				if state.LogLevel < logx.LevelWarn {
+					state.LogLevel = logx.LevelWarn
+				}
+			}
+
 			_, err := io.Copy(w, state.ResponseBody)
 			if err != nil {
-				PanicApiError(state, err, "write response body")
+				onWriteError(err)
 			}
 
 			if closer, ok := state.ResponseBody.(io.Closer); ok {
 				err = closer.Close()
 				if err != nil {
-					PanicApiError(state, err, "close response reader")
+					onWriteError(err)
 				}
 			}
 		}
@@ -291,6 +302,7 @@ func CreateHandlerFunc(handler ApiHandler, logFinder logx.LogFinder) http.Handle
 	}
 }
 
+// 执行 ApiUserHostResolver 、 ApiNameResolver 、 ApiDecoder 、 ApiMethodCaller ，并填充 state.Logger 。
 func handleRequest(state *ApiState, handler ApiHandler, logFinder logx.LogFinder) {
 	defer handlePanic(state, handler, logFinder)
 
