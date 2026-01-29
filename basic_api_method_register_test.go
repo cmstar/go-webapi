@@ -8,7 +8,8 @@ import (
 )
 
 func Test_basicApiMethodRegister_RegisterMethod(t *testing.T) {
-	reg := NewBasicApiMethodRegister().(*basicApiMethodRegister)
+	// 初始未开启流式输出的支持。
+	reg := NewBasicApiMethodRegister(BasicApiMethodRegisterOp{}).(*basicApiMethodRegister)
 
 	// @name 测试用例名称，也是注册的方法名称。
 	// @panicPattern 若不为空，断言 panic 的消息，必须匹配此正则。
@@ -76,6 +77,16 @@ func Test_basicApiMethodRegister_RegisterMethod(t *testing.T) {
 	testOne("NotError", "'NotError' must be an error", func() (int, string) { panic("never run") })
 	testOne("TooManyParam", "'TooManyParam' has more than 2 output parameters", func() (int, string, int) { panic("never run") })
 	testOne("NotSupportedType", "'chan int' of method 'NotSupportedType' is not supported", func() chan int { panic("never run") })
+	// 未开启流式支持时报错。
+	testOne("StreamingResponse", "'StreamingResponse' is not supported", func() StreamingResponse { panic("never run") })
+	testOne("EventStream", "'EventStream' is not supported", func() EventStream[int] { panic("never run") })
+	testOne("NdJson", "'NdJson' is not supported", func() *NdJson[string] { panic("never run") })
+
+	// 开启流式支持。
+	reg.op.SupportStreamingResponse = true
+	testOne("StreamingResponse", "", func() StreamingResponse { panic("never run") })
+	testOne("EventStream", "", func() EventStream[int] { panic("never run") })
+	testOne("NdJson", "", func() *NdJson[string] { panic("never run") })
 }
 
 func Test_basicApiMethodRegister_fixNameOrIgnore(t *testing.T) {
@@ -95,7 +106,7 @@ func Test_basicApiMethodRegister_fixNameOrIgnore(t *testing.T) {
 		{"ignore2", "___", "", true},
 	}
 
-	reg := NewBasicApiMethodRegister().(*basicApiMethodRegister)
+	reg := NewBasicApiMethodRegister(BasicApiMethodRegisterOp{}).(*basicApiMethodRegister)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotFixedName, gotIgnore := reg.fixNameOrIgnore(tt.args)
@@ -112,7 +123,7 @@ func Test_basicApiMethodRegister_fixNameOrIgnore(t *testing.T) {
 }
 
 func Test_basicApiMethodRegister_GetMethod(t *testing.T) {
-	reg := NewBasicApiMethodRegister().(*basicApiMethodRegister)
+	reg := NewBasicApiMethodRegister(BasicApiMethodRegisterOp{}).(*basicApiMethodRegister)
 
 	testOne := func(name string, expectedOk bool, expectedMethod reflect.Value) {
 		t.Run(name, func(t *testing.T) {
@@ -155,7 +166,7 @@ func Test_basicApiMethodRegister_GetMethod(t *testing.T) {
 }
 
 func Test_basicApiMethodRegister_RegisterMethods(t *testing.T) {
-	reg := NewBasicApiMethodRegister().(*basicApiMethodRegister)
+	reg := NewBasicApiMethodRegister(BasicApiMethodRegisterOp{}).(*basicApiMethodRegister)
 	provider := basicApiMethodRegisterTestProvider{}
 	valProvider := reflect.ValueOf(provider)
 	reg.RegisterMethods(provider)

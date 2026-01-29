@@ -43,13 +43,15 @@ const (
 // 可通过替换其成员实现接口的定制。
 func NewSlimApiHandler(name string) *webapi.ApiHandlerWrapper {
 	return &webapi.ApiHandlerWrapper{
-		HandlerName:         name,
-		HttpMethods:         SupportedHttpMethods(),
-		ApiNameResolver:     NewSlimApiNameResolver(),
-		ApiDecoder:          NewSlimApiDecoder(),
-		ApiMethodCaller:     webapi.NewBasicApiMethodCaller(),
-		ApiResponseBuilder:  webapi.NewBasicApiResponseBuilder(),
-		ApiMethodRegister:   webapi.NewBasicApiMethodRegister(),
+		HandlerName:        name,
+		HttpMethods:        SupportedHttpMethods(),
+		ApiNameResolver:    NewSlimApiNameResolver(),
+		ApiDecoder:         NewSlimApiDecoder(),
+		ApiMethodCaller:    webapi.NewBasicApiMethodCaller(),
+		ApiResponseBuilder: webapi.NewBasicApiResponseBuilder(),
+		ApiMethodRegister: webapi.NewBasicApiMethodRegister(webapi.BasicApiMethodRegisterOp{
+			SupportStreamingResponse: true,
+		}),
 		ApiUserHostResolver: webapi.NewBasicApiUserHostResolver(),
 		ApiResponseWriter:   NewSlimApiResponseWriter(),
 		ApiLogger:           NewSlimApiLogger(),

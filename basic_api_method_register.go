@@ -12,13 +12,20 @@ import (
 // basicApiMethodRegister 提供 ApiMethodRegister 的标准实现。
 type basicApiMethodRegister struct {
 	methods *sync.Map
+	op      BasicApiMethodRegisterOp
+}
+
+// BasicApiMethodRegisterOp 用于 [NewBasicApiMethodRegister] ，提供选项配置。
+type BasicApiMethodRegisterOp struct {
+	SupportStreamingResponse bool // 是否允许方法返回 [StreamingResponse] 。
 }
 
 // NewBasicApiMethodRegister 返回一个预定义的 ApiMethodRegister 的标准实现。
 // 当实现一个 ApiHandler 时，可基于此实例实现 ApiMethodRegister 。
-func NewBasicApiMethodRegister() ApiMethodRegister {
+func NewBasicApiMethodRegister(op BasicApiMethodRegisterOp) ApiMethodRegister {
 	return &basicApiMethodRegister{
 		methods: new(sync.Map),
+		op:      op,
 	}
 }
 
@@ -74,9 +81,17 @@ func (r *basicApiMethodRegister) GetMethod(name string) (method ApiMethod, ok bo
 }
 
 // checkMethodOut 校验方法的输出参数。在参数不合规时 panic 。
+//
 // 允许方法允许有0-2个输出参数。
-// 1个参数时，参数可以是任意 struct/map[string]*/基础类型 或者此三类作为元素的 slice ，也可以是 error 。
-// 2个参数时，第一个参数可以是  struct/map[string]*/基础类型 或者此三类作为元素的 slice ，第二个参数必须是 error 。
+//   - 1个参数时，参数可以是任意受支持的类型，也可以是 error 。
+//   - 2个参数时，第一个参数可以是任意受支持的类型，第二个参数必须是 error 。
+//
+// 受支持类型为：
+//   - 任意 struct 。
+//   - map[string]ANY ANY可以是任意类型，但 key 类型必须是 string 。
+//   - 基础类型：bool/字符串/数字。
+//   - [StreamingResponse] 需要开启 [BasicApiMethodRegisterOp.SupportStreamingResponse] 开关。
+//   - 上述 struct/map/基础类型的 slice 。不支持 StreamingResponse 的 slice 。
 func (r *basicApiMethodRegister) checkMethodOut(method reflect.Value, webApiName string) {
 	typ := method.Type()
 	num := typ.NumOut()
@@ -86,11 +101,11 @@ func (r *basicApiMethodRegister) checkMethodOut(method reflect.Value, webApiName
 
 	case 1:
 		tOut := typ.Out(0)
-		r.mustBeSupportedOut(method, webApiName, tOut, true)
+		r.mustBeSupportedOut(method, webApiName, tOut, true, r.op.SupportStreamingResponse)
 
 	case 2:
 		first := typ.Out(0)
-		r.mustBeSupportedOut(method, webApiName, first, false)
+		r.mustBeSupportedOut(method, webApiName, first, false, r.op.SupportStreamingResponse)
 
 		second := typ.Out(1)
 		if !second.Implements(reflect.TypeOf((*error)(nil)).Elem()) {
@@ -102,9 +117,20 @@ func (r *basicApiMethodRegister) checkMethodOut(method reflect.Value, webApiName
 	}
 }
 
-func (r *basicApiMethodRegister) mustBeSupportedOut(method reflect.Value, webApiName string, outTyp reflect.Type, canBeError bool) {
+func (r *basicApiMethodRegister) mustBeSupportedOut(
+	method reflect.Value,
+	webApiName string,
+	outTyp reflect.Type,
+	canBeError bool,
+	canBeStreamingResponse bool,
+) {
 	kind := outTyp.Kind()
 	ok := false
+
+	if outTyp.Implements(reflect.TypeOf((*StreamingResponse)(nil)).Elem()) {
+		ok = canBeStreamingResponse
+		goto DONE
+	}
 
 	switch {
 	case kind == reflect.Interface:
@@ -116,19 +142,25 @@ func (r *basicApiMethodRegister) mustBeSupportedOut(method reflect.Value, webApi
 	case conv.IsSimpleType(outTyp) || kind == reflect.Struct:
 		ok = true
 
-	case kind == reflect.Slice || kind == reflect.Ptr:
+	case kind == reflect.Slice:
 		elemTyp := outTyp.Elem()
-		r.mustBeSupportedOut(method, webApiName, elemTyp, false)
+		r.mustBeSupportedOut(method, webApiName, elemTyp, false, false)
+		ok = true
+
+	case kind == reflect.Ptr:
+		elemTyp := outTyp.Elem()
+		r.mustBeSupportedOut(method, webApiName, elemTyp, false, false)
 		ok = true
 
 	case kind == reflect.Map:
 		keyTyp := outTyp.Key()
-		r.mustBeSupportedOut(method, webApiName, keyTyp, false)
+		r.mustBeSupportedOut(method, webApiName, keyTyp, false, false)
 		elemTyp := outTyp.Elem()
-		r.mustBeSupportedOut(method, webApiName, elemTyp, false)
+		r.mustBeSupportedOut(method, webApiName, elemTyp, false, false)
 		ok = true
 	}
 
+DONE:
 	if !ok {
 		panic(fmt.Sprintf("the type of the output parameter '%v' of method '%v' is not supported", outTyp, webApiName))
 	}
