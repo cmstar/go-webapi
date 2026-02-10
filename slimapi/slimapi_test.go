@@ -384,6 +384,9 @@ data: {"Code":0,"Message":"","Data":"b"}
 
 data: {"Code":500,"Message":"internal error","Data":"error data"}
 
+event: END
+data: {"Code":1000,"Message":"","Data":null}
+
 `,
 		wantLogPattern: map[string]string{
 			"level":     "ERROR",

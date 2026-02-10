@@ -95,6 +95,10 @@ func (x *slimApiResponseWriter) writeStreamingResponse(state *webapi.ApiState, s
 
 			buf.Reset()
 		}
+
+		streaming.WriteFinalBlock(buf)
+		final := buf.Bytes()
+		yield(final)
 	}
 }
 
