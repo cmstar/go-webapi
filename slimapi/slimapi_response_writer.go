@@ -77,6 +77,11 @@ func (x *slimApiResponseWriter) writeStreamingResponse(state *webapi.ApiState, s
 		buf := new(bytes.Buffer)
 
 		for data, err := range streaming.Iter() {
+			if err != nil {
+				state.Error = err
+				// 并没有严格要求 error 必须是 StreamingResponse 的最后一段。故此处不需要 break 。
+			}
+
 			response := x.buildJsonResponse(state, data, err)
 			if response == nil {
 				continue

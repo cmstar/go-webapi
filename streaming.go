@@ -30,11 +30,16 @@ type StreamingResponse interface {
 // 一个 SSE response 的样式形如：
 //
 //	data: {"Code":0,"Message":"","Data":{...}}
+//
 //	data: {"Code":0,"Message":"","Data":{...}}
+//
 //	data: {"Code":10000,"Message":"error message","Data":{...}}
+//
 //	...
 //
 // 其中，每段输出通常是 [ApiResponse] （或其衍生结构）的 JSON 序列化结果。
+//
+// 通常出现错误时，输出流就终止了，故 error 是数据的最后一段；但并不严格要求此行为。
 type EventStream[DATA any] func(yield func(data DATA, err error) bool)
 
 var _ StreamingResponse = (*EventStream[any])(nil)
@@ -74,6 +79,8 @@ func (x EventStream[DATA]) Iter() iter.Seq2[any, error] {
 //	...
 //
 // 其中，每段输出通常是 [ApiResponse] （或其衍生结构）的 JSON 序列化结果。
+//
+// 通常出现错误时，输出流就终止了，故 error 是数据的最后一段；但并不严格要求此行为。
 type NdJson[DATA any] func(yield func(data DATA, err error) bool)
 
 var _ StreamingResponse = (*NdJson[any])(nil)

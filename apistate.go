@@ -58,8 +58,7 @@ type ApiState struct {
 	// key-value 对，与 [logx.Logger.Log] 的 keyValues 参数定义一致。
 	LogMessage []any
 
-	// Error 记录 ApiMethodCaller.Call() 方法所调用的具体 WebAPI 方法返回的 error 值；
-	// 或记录 ApiDecoder 和 ApiMethodCaller 处理过程中 panic 的错误。没有错误时为 nil 。
+	// Error [ApiHandler] 中各管道发生从错误。包括 panic 后被捕获的错误。没有错误时为 nil 。
 	Error error
 
 	// ResponseBody 提供实际返回的 HTTP body 的数据。若为 nil ，则 HTTP body 为空。

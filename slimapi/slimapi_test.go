@@ -8,6 +8,7 @@ import (
 	"net/textproto"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cmstar/go-errx"
 	"github.com/cmstar/go-logx"
@@ -369,6 +370,49 @@ func TestSlimApi_CannotEncode(t *testing.T) {
 	})
 }
 
+func TestSlimApi_ServerSendEventWithError(t *testing.T) {
+	DoIntegrationTest(t, integrationTestArgs{
+		requestRelativeUrl: "?ServerSendEventWithError",
+		requestContentType: "",
+		requestBody:        "",
+		requestRouteParam:  map[string]string{},
+		wantStatusCode:     200,
+		wantContentType:    webapi.ContentTypeEventStream,
+		wantBody: `data: {"Code":0,"Message":"","Data":"a"}
+
+data: {"Code":0,"Message":"","Data":"b"}
+
+data: {"Code":500,"Message":"internal error","Data":"error data"}
+
+`,
+		wantLogPattern: map[string]string{
+			"level":     "ERROR",
+			"ErrorType": "errorString",
+			"Error":     `msg`,
+		},
+	})
+}
+
+func TestSlimApi_NdJsonWithError(t *testing.T) {
+	DoIntegrationTest(t, integrationTestArgs{
+		requestRelativeUrl: "?NdJsonWithError",
+		requestContentType: "",
+		requestBody:        "",
+		requestRouteParam:  map[string]string{},
+		wantStatusCode:     200,
+		wantContentType:    webapi.ContentTypeNdJson,
+		wantBody: `{"Code":0,"Message":"","Data":"a"}
+{"Code":0,"Message":"","Data":"b"}
+{"Code":500,"Message":"internal error","Data":"error data"}
+`,
+		wantLogPattern: map[string]string{
+			"level":     "ERROR",
+			"ErrorType": "errorString",
+			"Error":     `msg`,
+		},
+	})
+}
+
 func (integrationTestMethodProvider) Empty() {}
 
 type PlusRequest struct {
@@ -466,4 +510,34 @@ func (integrationTestMethodProvider) UploadFile(req struct {
 		sum += v
 	}
 	return fmt.Sprintf("A:%s, B:%d, C:%s, Sum:%d", req.A.Filename, len(req.B), req.C, sum)
+}
+
+// SSE 按间隔时间输出，并在最后输出一段错误。
+func (integrationTestMethodProvider) ServerSendEventWithError() webapi.EventStream[string] {
+	return func(yield func(data string, err error) bool) {
+		for _, v := range []string{"a", "b"} {
+			if !yield(v, nil) {
+				return
+			}
+
+			time.Sleep(200 * time.Millisecond)
+		}
+
+		yield("error data", errors.New("msg"))
+	}
+}
+
+// NdJson 按间隔时间输出，并在最后输出一段错误。
+func (integrationTestMethodProvider) NdJsonWithError() webapi.NdJson[string] {
+	return func(yield func(data string, err error) bool) {
+		for _, v := range []string{"a", "b"} {
+			if !yield(v, nil) {
+				return
+			}
+
+			time.Sleep(200 * time.Millisecond)
+		}
+
+		yield("error data", errors.New("msg"))
+	}
 }
