@@ -28,7 +28,7 @@ type NewStateSetup struct {
 }
 
 // NewStateForTest 基于 httptest 包创建用于测试 HTTP 请求的相关实例。
-func NewStateForTest(apiHandler webapi.ApiHandler, uri string, setup NewStateSetup) (*webapi.ApiState, *httptest.ResponseRecorder) {
+func NewStateForTest(apiHandler webapi.ApiHandler, uri string, setup NewStateSetup) (*webapi.ApiState, *RecorderEx) {
 	httpMethod := setup.HttpMethod
 	if httpMethod == "" {
 		httpMethod = http.MethodGet
@@ -58,7 +58,7 @@ func NewStateForTest(apiHandler webapi.ApiHandler, uri string, setup NewStateSet
 	}
 
 	req = webapi.SetRouteParams(req, setup.RouteParams)
-	rec := httptest.NewRecorder()
+	rec := NewRecorderEx()
 	state := webapi.NewState(rec, req, apiHandler)
 	return state, rec
 }
@@ -93,4 +93,35 @@ func CreateMultipartFileHeader(fieldName, fileName string, body []byte, header m
 	}
 
 	panic("something wrong")
+}
+
+// RecorderEx 是 [httptest.ResponseRecorder] 的“派生”，它在有数据写入时调用 [RecorderEx.OnWrite] 回调，以更实时的监控数据的写入行为。
+type RecorderEx struct {
+	httptest.ResponseRecorder
+	OnWrite func(p []byte)
+}
+
+// NewRecorderEx 创建一个 [RecorderEx] 实例。
+func NewRecorderEx() *RecorderEx {
+	return &RecorderEx{
+		ResponseRecorder: *httptest.NewRecorder(),
+	}
+}
+
+// Write 覆盖实现 [httptest.ResponseRecorder.Write] 。
+func (r *RecorderEx) Write(p []byte) (n int, err error) {
+	n, err = r.ResponseRecorder.Write(p)
+	if r.OnWrite != nil {
+		r.OnWrite(p)
+	}
+	return
+}
+
+// WriteString 覆盖实现 [httptest.ResponseRecorder.WriteString] 。
+func (x *RecorderEx) WriteString(str string) (n int, err error) {
+	n, err = x.ResponseRecorder.WriteString(str)
+	if x.OnWrite != nil {
+		x.OnWrite([]byte(str))
+	}
+	return
 }
