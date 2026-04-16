@@ -22,34 +22,39 @@ slimauth       基于 SlimAPI 扩展的签名校验协议。
 
 ## 管线模型
 
-每个 HTTP 请求的处理被分解为一条**管线**（pipeline），由以下阶段按顺序执行：
+每个 HTTP 请求的处理被分解为一条**管线**（pipeline）。贯穿整条管线的是 `[ApiState](#apistate)`，它承载了一个请求从开始到结束的所有状态数据。
 
+整体流程体现在 `webapi.CreateHandlerFunc()` 函数中，它将一个 `ApiHandler` 接口的实例转换为标准的 `http.HandlerFunc`。
+
+管线调用步骤如下：
 ```
 HTTP Request
   │
   ▼
 ┌──────────────────────┐
-│  ApiUserHostResolver │  解析客户端 IP。
+│  ApiUserHostResolver │  FillUserHost：解析客户端 IP。
 ├──────────────────────┤
-│  ApiNameResolver     │  解析 API 方法名称（及前置校验，如签名、认证）。
+│  ApiNameResolver     │  FillMethod：解析 API 方法名称（可含签名校验、认证等前置逻辑）。
 ├──────────────────────┤
-│  ApiMethodRegister   │  检索并定位到需要调用的的方法。
+│  (GetMethod)         │  由 ApiMethodRegister.GetMethod() 根据 Name 检索 Method；失败则填 Error，跳过 Decode/Call。
 ├──────────────────────┤
-│  ApiDecoder          │  从请求中构建方法参数。
+│  ApiDecoder          │  Decode：从请求中构建方法参数。
 ├──────────────────────┤
-│  ApiMethodCaller     │  调用目标方法。
+│  ApiMethodCaller     │  Call：调用目标方法。
 ├──────────────────────┤
-│  ApiResponseBuilder  │  将调用结果组装为响应对象（通常由 ResponseWriter 间接调用）。
+│  ApiResponseWriter   │  WriteResponse：写入 ApiState.Response* 字段，期间可调用 ApiResponseBuilder.BuildResponse() 。
 ├──────────────────────┤
-│  ApiResponseWriter   │  序列化响应并写入 HTTP body 。
+|  (Response)          |  --> HTTP Response
 ├──────────────────────┤
-│  ApiLogger           │  输出日志。
+│  ApiLogger           │  Log：输出请求日志。此步骤在输出 HTTP 响应流之后，但并不是异步执行的。
 └──────────────────────┘
 ```
 
-贯穿整条管线的是 [`ApiState`](#apistate)，它承载了一个请求从开始到结束的所有状态数据。
+非标准管线步骤：
+- **ApiMethodRegister**：仅在**初始化**阶段通过 `RegisterMethod` / `RegisterMethods` 注册方法；在**每个请求**里，框架在 `FillMethod` 之后调用 `GetMethod`，根据 `ApiState.Name` 解析出 `ApiState.Method`。若方法不存在，会设置错误并跳过后续的 `Decode` 与 `Call`。
+- **ApiResponseBuilder**：在 `ApiResponseWriter.WriteResponse` 执行过程中被调用（例如将 `ApiMethodCaller.Call` 的结果交给 `BuildResponse`），用于组装待序列化的业务结果。
 
-> 上述流程体现在 `webapi.CreateHandlerFunc()` 函数中，它将一个 `ApiHandler` 接口的实例转换为标准的 `http.HandlerFunc`。
+---
 
 ## 核心接口
 
@@ -101,16 +106,16 @@ type ApiHandlerWrapper struct {
 
 ### 管线接口一览
 
-| 接口                  | 职责                                         | 对应填充/处理 `ApiState` 字段                |
-| --------------------- | -------------------------------------------- | ------------------------------------- |
-| `ApiUserHostResolver` | 解析客户端 IP 地址。                         | `UserHost`                            |
-| `ApiNameResolver`     | 从请求中解析目标方法名称。                   | `Name`                                |
-| `ApiMethodRegister`   | 注册和检索 API 方法。                        | `Method`                              |
-| `ApiDecoder`          | 从请求中构建方法的参数。                     | `Args`                                |
-| `ApiMethodCaller`     | 调用方法，获取返回值。                       | `Data`、`Error`                       |
-| `ApiResponseBuilder`  | 将调用结果组装为响应对象。                   | —                                     |
-| `ApiResponseWriter`   | 序列化响应，填充 HTTP body 和 Content-Type。 | `ResponseBody`、`ResponseContentType` |
-| `ApiLogger`           | 输出请求日志。                               | `LogLevel`、`LogMessage`              |
+| 接口                  | 职责                                                                | 对应填充/处理 `ApiState` 字段         |
+| --------------------- | ------------------------------------------------------------------- | ------------------------------------- |
+| `ApiUserHostResolver` | 解析客户端 IP 地址。                                                | `UserHost`                            |
+| `ApiNameResolver`     | 从请求中解析目标方法名称；非法请求可设置 `Error` 以跳过后续阶段。   | `Name`、`Error`（解析失败时）         |
+| `ApiMethodRegister`   | 初始化时注册方法；请求时 `GetMethod` 按 `Name` 解析 `Method`。      | `Method`、`Error`（未能定位到方法时） |
+| `ApiDecoder`          | 从请求中构建方法的参数。                                            | `Args`                                |
+| `ApiMethodCaller`     | 调用方法，获取返回值。                                              | `Data`、`Error`                       |
+| `ApiResponseBuilder`  | 将单次调用结果组装为待写出对象（通常由 `WriteResponse` 内部调用）。 | —                                     |
+| `ApiResponseWriter`   | 根据管线结果填充响应字段，供后续写入 HTTP。                         | `ResponseBody`、`ResponseContentType` |
+| `ApiLogger`           | 在响应体写出之后输出请求日志。                                      | `LogLevel`、`LogMessage`              |
 
 每个接口均提供了对应的函数适配器（如 `ApiNameResolverFunc`、`ApiDecoderFunc`），可以直接用函数实现接口，无需定义结构体。
 
