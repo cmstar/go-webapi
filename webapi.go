@@ -290,20 +290,26 @@ func CreateHandlerFunc(handler ApiHandler, logFinder logx.LogFinder) http.Handle
 
 func doWriteResponse(state *ApiState, w http.ResponseWriter) {
 	flusher, canFlush := w.(http.Flusher)
-	var ignorePanic bool
+
+	// 若无法正确输出（最常见的是连接已断开），则留下 WriteResponseError 日志并尝试将日志级别提升到 warn 。
+	// 迭代或 flush 过程中若发生 panic ，由最外层的 Recoverer 中间件处理。
+	onWriteError := func(err error) {
+		state.LogMessage = append(state.LogMessage,
+			"WriteResponseError", err,
+		)
+
+		if state.LogLevel < logx.LevelWarn {
+			state.LogLevel = logx.LevelWarn
+		}
+	}
 
 	defer func() {
-		if ignorePanic {
-			return
-		}
-
 		err := errx.PreserveRecover("", recover())
 		if err != nil {
-			PanicApiError(state, err, "write response body")
+			onWriteError(err)
 		}
 	}()
 
-	// 此处错误由最外层的 Recoverer 中间件处理。
 	for data := range state.ResponseBody {
 		if len(data) == 0 {
 			continue
@@ -311,8 +317,8 @@ func doWriteResponse(state *ApiState, w http.ResponseWriter) {
 
 		_, err := w.Write(data)
 		if err != nil {
-			ignorePanic = true
-			PanicApiError(state, err, "write response body")
+			onWriteError(err)
+			return
 		}
 
 		if canFlush {
@@ -321,6 +327,7 @@ func doWriteResponse(state *ApiState, w http.ResponseWriter) {
 	}
 }
 
+// 执行 ApiUserHostResolver 、 ApiNameResolver 、 ApiDecoder 、 ApiMethodCaller ，并填充 state.Logger 。
 func handleRequest(state *ApiState, handler ApiHandler, logFinder logx.LogFinder) {
 	defer handlePanic(state, handler, logFinder)
 
