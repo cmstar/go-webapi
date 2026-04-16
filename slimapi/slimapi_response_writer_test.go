@@ -95,6 +95,7 @@ func Test_slimApiResponseWriter_WriteResponse(t *testing.T) {
 				`data: {"Code":0,"Message":"","Data":1}` + "\n\n",
 				`data: {"Code":0,"Message":"","Data":2}` + "\n\n",
 				`data: {"Code":0,"Message":"","Data":3}` + "\n\n",
+				`event: END` + "\n" + `data: {"Code":1000,"Message":"","Data":null}` + "\n\n",
 			},
 			wantPanicPattern: "",
 		})
@@ -113,6 +114,7 @@ func Test_slimApiResponseWriter_WriteResponse(t *testing.T) {
 				`{"Code":0,"Message":"","Data":"a"}` + "\n",
 				`{"Code":0,"Message":"","Data":"b"}` + "\n",
 				`{"Code":0,"Message":"","Data":"c"}` + "\n",
+				"",
 			},
 			wantPanicPattern: "",
 		})
