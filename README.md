@@ -7,9 +7,7 @@
 [![GoVersion](https://img.shields.io/github/go-mod/go-version/cmstar/go-webapi)](https://github.com/cmstar/go-webapi/blob/main/go.mod)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cmstar/go-webapi)](https://goreportcard.com/report/github.com/cmstar/go-webapi)
 
-这是[SlimWebApi](https://github.com/cmstar/SlimWebApi)的 Go 版。 SlimAPI 通信协议详见[godoc-SlimAPI通信协议](https://pkg.go.dev/github.com/cmstar/go-webapi/slimapi#pkg-overview)。
-
-同时，基于 SlimAPI ，提供一套带有签名校验逻辑的扩展 [SlimAuth](https://pkg.go.dev/github.com/cmstar/go-webapi/slimauth#pkg-overview)。
+Golang 开发的极轻量、傻瓜化 WebAPI 框架，将通信协议与业务代码完全解耦，让开发者专注于业务逻辑。
 
 ## 快速使用
 
@@ -23,71 +21,33 @@ go get -u github.com/cmstar/go-webapi@latest
 package main
 
 import (
-	"fmt"
 	"net/http"
-	"time"
 
-	"github.com/cmstar/go-errx"
 	"github.com/cmstar/go-logx"
 	"github.com/cmstar/go-webapi"
 	"github.com/cmstar/go-webapi/slimapi"
 )
 
 func main() {
-	// 初始化 API 容器。
 	slim := slimapi.NewSlimApiHandler("demo")
-
-	// 注册 WebAPI 方法。
 	slim.RegisterMethods(Methods{})
 
-	// 初始化日志。 https://github.com/cmstar/go-logx
 	logger := logx.NewStdLogger(nil)
 	logFinder := logx.NewSingleLoggerLogFinder(logger)
 
-	// 初始化引擎。
 	e := webapi.NewEngine()
-
-	// 注册路由，使用 chi 库的语法。 https://github.com/go-chi/chi
 	e.Handle("/api/{~method}", slim, logFinder)
-
-	// 启动。
-	err := http.ListenAndServe(":15001", e)
-	if err != nil {
-		logger.Log(logx.LevelFatal, err.Error())
-	}
+	http.ListenAndServe(":15001", e)
 }
 
-// 用于承载 WebAPI 方法。
 type Methods struct{}
 
-// 方法必须是 exported ，即大写字母开头的。
-func (Methods) Plus(req struct {
-	A int // 参数首字母也必须是大写的。
-	B int
-}) int {
+func (Methods) Plus(req struct{ A, B int }) int {
 	return req.A + req.B
 }
 
-func (Methods) Time() string {
-	return time.Now().Format("2006-01-02 15:04")
-}
-
-// 参数也可以是 *webapi.ApiState ，可通过其访问到当前请求的上下文。
-// 也可以同时搭配 struct 型的参数。
-func (Methods) Headers(state *webapi.ApiState, req struct{ NoMeaning bool }) map[string][]string {
-	// RawRequest 是标准库中，当前请求的 *http.Request 。
-	return state.RawRequest.Header
-}
-
-// 支持至多两个返回值，第一个返回值对应输出的 Data 字段；第二个返回值必须是 error 。详见《错误处理》节。
-func (Methods) Err(req struct {
-	BizErr bool
-	Value  string
-}) (string, error) {
-	if req.BizErr {
-		return req.Value, errx.NewBizError(12345, "your message", nil)
-	}
-	return "", fmt.Errorf("not a biz-error: %v", req.Value)
+func (Methods) Multiply(req struct{ A, B int }) int {
+	return req.A * req.B
 }
 ```
 
@@ -96,80 +56,22 @@ func (Methods) Err(req struct {
 ```
 GET http://localhost:15001/api/plus?a=11&b=22
 
-=> {
-    "Code": 0,
-    "Message": "",
-    "Data": 33
-}
+=> {"Code":0,"Message":"","Data":33}
 
 ---
-# 以 JSON 格式请求。
-POST http://localhost:15001/api/plus
+
+POST http://localhost:15001/api/multiply
 Content-Type: application/json
 
-{"a":11, "b":22}
+{"a":11,"b":22}
 
-=> {
-    "Code": 0,
-    "Message": "",
-    "Data": 33
-}
-
----
-GET http://localhost:15001/api/time
-
-=> {
-    "Code": 0,
-    "Message": "",
-    "Data": "2022-03-06 23:16"
-}
-
----
-GET http://localhost:15001/api/headers
-
-=> {
-    "Code": 0,
-    "Message": "",
-    "Data": {
-        "Accept": ["text/html,application/xhtml+xml"],
-        "Accept-Encoding": ["gzip, deflate, br"],
-        "Connection": ["keep-alive"],
-        "User-Agent": ["Mozilla/5.0 ..."],
-        ...
-    }
-}
-
----
-# BizError 会以 Code + Message 的方式体现在输出上。
-GET http://localhost:15001/api/err?bizErr=1&value=my-value
-
-=> {
-    "Code": 12345,
-    "Message": "your message",
-    "Data": "my-value"
-}
-
----
-# 非 BizError 均表现为 internal error 。
-GET http://localhost:15001/api/err?bizErr=false&value=my-value
-
-=> {
-    "Code": 500,
-    "Message": "internal error",
-    "Data": ""
-}
+=> {"Code":0,"Message":"","Data":242}
 ```
 
-如果需要接收上传的文件，参考 WIKI 页 [上传文件](https://github.com/cmstar/go-webapi/wiki/%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6) 。
+上面的示例中，业务代码 `Plus` 和 `Multiply` 没有耦合 HTTP 协议，通信部分完全由框架处理。
 
-## 错误处理
+更完整的用法和说明，请参阅 [`docs/`](docs/) 目录。
 
-表示 WebAPI 的方法支持0-2个返回值（详见[GoDoc](https://pkg.go.dev/github.com/cmstar/go-webapi#ApiMethodRegister)）。
+## 其他语言的版本
 
-当方法返回：
-- 没有 `error` 返回值或返回的 `error` 为 `nil`：表示调用成功，输出的 `Code=0` 。
-- 返回 `errx.BizError`：输出 `Code=BizError.Code(), Message=BizError.Message()` 。
-- 返回不是 `errx.BizError` 的 `error`：统一输出 `Code=500, Message=internal error` 。
-- 方法 `panic`：统一输出 `Code=500, Message=internal error` 。
-
-> `BizError` 的详细说明，参考[go-errx库](https://github.com/cmstar/go-errx#bizerror)。
+- .net 版： [SlimAPI](https://pkg.go.dev/github.com/cmstar/go-webapi/slimapi)
