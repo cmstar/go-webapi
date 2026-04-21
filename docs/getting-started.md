@@ -294,6 +294,7 @@ GET http://localhost:15001/api/13
 ## 下一步
 
 - [SlimAPI 协议详解](slim-api.md) —— 请求/响应格式、参数处理等完整说明。
-  - [接收文件](upload-file.md) —— 描述 SlimAPI 如果通过 `multipart/form-data` 类型的请求传递文件、简单类型和 JSON 数据。
+  - [接收文件](upload-file.md) —— 描述 SlimAPI 如何通过 `multipart/form-data` 类型的请求传递文件、简单类型和 JSON 数据。
+  - [流式输出](streaming.md) —— 描述如何使用 SSE（Server-Sent Events）与 ‌ND-JSON‌（Newline-Delimited JSON）格式的流式响应。
 - [框架设计与扩展](architecture.md) —— 管线模型、核心接口、如何定制和扩展框架。
 - [SlimAuth](slim-auth.md) —— 带签名校验的 SlimAPI 扩展。

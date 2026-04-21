@@ -2,7 +2,7 @@
 
 SlimAPI 是一个基于 HTTP 的 WebAPI 通信协议。
 - 自适应多种不同格式的输入。
-- 固定使用 JSON 输出。
+- 固定使用 JSON 输出，支持单个 JSON 输出，也支持 SSE/ND-JSON 格式流式输出同一套 JSON 信封（流式输出详见 [流式输出](streaming.md)）。
 
 `slimapi` 包基于 `webapi` 的[管线模型](architecture.md)，提供了 SlimAPI 协议的完整实现。
 
@@ -21,7 +21,9 @@ SlimAPI 支持 GET 和 POST 两种 HTTP 方法，通过 `Content-Type` 头区分
 
 在 [Getting Started](getting-started.md) 中已演示了 GET / POST+JSON / POST+表单 格式的用法。
 
-而 `multipart/form-data` 格式较为灵活，详见 [接收文件](upload-file.md) 。
+### 接收文件
+
+`multipart/form-data` 格式较为灵活，详见 [接收文件](upload-file.md) 。
 
 ---
 
@@ -121,6 +123,10 @@ myCallback({"Code":0,"Message":"","Data":3})
 
 通过 `~format=plain`（或 `~format=json,plain`），可将响应的 Content-Type 设为 `text/plain`，body 内容不变。
 
+### 流式响应
+
+当方法返回 `webapi.EventStream` 或 `webapi.NdJson` 时，响应的 Content-Type 与 body 格式由流式协议决定，不再适用本节的单次 JSON 说明。详见 [流式输出](streaming.md) 。
+
 ---
 
 ## 输出值与错误处理
@@ -173,9 +179,9 @@ func (Methods) Headers(state *webapi.ApiState) map[string][]string {
 
 `*ApiState` 可与 struct 参数同时使用。但注意：**方法参数表中同一种类型只能出现一次**。
 
-### 接收文件
+### 流式输出
 
-详见 [接收文件](upload-file.md) 。
+详见 [流式输出](streaming.md) 。
 
 ### 参数的合并
 
@@ -220,8 +226,15 @@ Content-Type: application/json
 
 ## 客户端调用：SlimApiInvoker
 
-`slimapi.SlimApiInvoker[TParam, TData]` 是一个泛型 HTTP 客户端，用于调用 SlimAPI 接口。
+`slimapi.SlimApiInvoker[TParam, TResult]` 是一个泛型 HTTP 客户端，用于调用 SlimAPI 接口。
 
+方法：
+- `Do` / `DoRaw` 方法用于请求标准的单一 JSON 结果的 SlimAPI 。
+- `DoRawStream` 方法用于请求 SSE/ND-JSON （见 [流式输出](streaming.md)）格式流式输出的 SlimAPI 。
+
+> 方法通常有对应的 `Must` 版本（如 `MustDo`、`MustDoRaw`），调用时若发生错误会直接 panic 。
+
+示例：
 ```go
 invoker := slimapi.NewSlimApiInvoker[MyParam, MyResult]("http://localhost:15001/api/Plus")
 
@@ -243,4 +256,3 @@ invoker.RequestSetup = func(r *http.Request) error {
 }
 ```
 
-每个方法都有对应的 panic 版本（`MustDo`、`MustDoRaw`）。
