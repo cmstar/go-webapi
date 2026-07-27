@@ -3,11 +3,11 @@ module github.com/cmstar/go-webapi
 go 1.24
 
 require (
-	github.com/cmstar/go-conv v0.6.5
+	github.com/cmstar/go-conv v0.6.6
 	github.com/cmstar/go-errx v1.5.0
 	github.com/cmstar/go-logx v1.4.0
-	github.com/go-chi/chi/v5 v5.2.3
-	github.com/stretchr/testify v1.8.4
+	github.com/go-chi/chi/v5 v5.3.1
+	github.com/stretchr/testify v1.11.1
 )
 
 require (
