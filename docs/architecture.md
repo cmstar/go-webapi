@@ -303,7 +303,7 @@ e := webapi.NewEngine()
 e.Handle("/api/{~method}", handler, logFinder)
 ```
 
-`NewEngine()` 创建引擎时，内置了 chi 的 `RealIP` 和 `Recoverer` 中间件。
+`NewEngine()` 创建引擎时，内置了 chi 的 `Recoverer` 中间件。
 
 `Handle()` 方法会根据 `ApiHandler.SupportedHttpMethods()` 的返回值，自动在 chi 上注册对应的 HTTP 方法路由。
 

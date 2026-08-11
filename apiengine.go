@@ -20,7 +20,6 @@ var _ http.Handler = (*ApiEngine)(nil)
 func NewEngine() *ApiEngine {
 	r := chi.NewRouter()
 
-	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 
 	return &ApiEngine{
