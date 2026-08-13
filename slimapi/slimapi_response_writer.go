@@ -42,6 +42,15 @@ func (x *slimApiResponseWriter) writeGenericResponse(state *webapi.ApiState) {
 		state.ResponseContentType = "text/plain"
 	}
 
+	// 正常请求会在名称解析阶段完成校验。这里再校验一次，避免定制管线或包内调用
+	// 直接写入 callback 时把不可信内容拼接到 JSONP 响应中。
+	callback := getCallback(state)
+	if callback != "" && !isValidCallback(callback) {
+		state.Error = webapi.CreateBadRequestError(state, nil, "bad callback")
+		state.ResponseContentType = webapi.ContentTypeJson
+		callback = ""
+	}
+
 	response := x.buildJsonResponse(state, state.Data, state.Error)
 	if response == nil {
 		return
@@ -50,7 +59,6 @@ func (x *slimApiResponseWriter) writeGenericResponse(state *webapi.ApiState) {
 	buf := new(bytes.Buffer)
 
 	// -> callback(
-	callback := getCallback(state)
 	if callback != "" {
 		buf.WriteString(callback)
 		buf.WriteByte('(')

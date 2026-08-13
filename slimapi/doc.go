@@ -19,7 +19,7 @@ http://domain/ApiEntry?~method=METHOD&~format=FORMAT&~callback=CALLBACK
 以“~”标记的参数为 API 框架的元参数：
   - ~method：必填；表示被调用的方法的名称。
   - ~format：可选；请求所使用的数据格式，支持get/post/json；此参数在可以在不方面指定`Content-Type`时提供相同的功能。
-  - ~callback：可选；JSONP回调函数的名称，一旦制定此参数，返回一个 JSONP 结果，Content-Type: text/javascript 。
+  - ~callback：可选；JSONP回调函数的名称，只能包含 ASCII 字母、数字、下划线或美元符号。一旦指定此参数，返回一个 JSONP 结果，Content-Type: text/javascript 。
 
 参数名称都是大小写不敏感的。`~format`参数优先级高于`Content-Type`，若指定了`~format`，则`Content-Type`的值被忽略。
 

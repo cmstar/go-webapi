@@ -1,6 +1,7 @@
 package slimapi
 
 import (
+	"net/url"
 	"testing"
 
 	"github.com/cmstar/go-webapi"
@@ -257,5 +258,35 @@ func Test_slimApiNameResolver_FillMethod(t *testing.T) {
 	// 异常情况。
 	testOne("?name.bad", webapi.ContentTypeNone, want{
 		errPattern: "bad format",
+	})
+
+	// JSONP callback 会进入 JavaScript 响应，三种参数来源都必须拒绝非标识符内容。
+	maliciousCallback := "cb);alert(1);//"
+	testOne("?~method=name&~format=plain&~callback="+url.QueryEscape(maliciousCallback), webapi.ContentTypeNone, want{
+		name:                "name",
+		requestFormat:       meta_RequestFormat_Get,
+		responseContentType: webapi.ContentTypeJson,
+		callback:            "",
+		errPattern:          "bad callback",
+	})
+
+	testOne("?name(cb%3Balert%281)", webapi.ContentTypeNone, want{
+		name:                "name",
+		requestFormat:       meta_RequestFormat_Get,
+		responseContentType: webapi.ContentTypeJson,
+		callback:            "",
+		errPattern:          "bad callback",
+	})
+
+	testOne("route-callback", webapi.ContentTypeNone, want{
+		name:                "name",
+		requestFormat:       meta_RequestFormat_Get,
+		responseContentType: webapi.ContentTypeJson,
+		callback:            "",
+		errPattern:          "bad callback",
+		routeParam: map[string]string{
+			meta_Param_Method:   "name",
+			meta_Param_Callback: maliciousCallback,
+		},
 	})
 }

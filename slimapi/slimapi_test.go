@@ -6,6 +6,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -104,6 +105,35 @@ func TestSlimApi_Empty(t *testing.T) {
 		wantStatusCode:     200,
 		wantContentType:    webapi.ContentTypeJson,
 		wantBody:           `{"Code":0,"Message":"","Data":null}`,
+	})
+}
+
+func TestSlimApi_Jsonp_ok(t *testing.T) {
+	DoIntegrationTest(t, integrationTestArgs{
+		requestRelativeUrl: "?~method=Empty&~callback=$callback_1",
+		requestContentType: "",
+		requestBody:        "",
+		requestRouteParam:  map[string]string{},
+		wantStatusCode:     200,
+		wantContentType:    webapi.ContentTypeJavascript,
+		wantBody:           `$callback_1({"Code":0,"Message":"","Data":null})`,
+	})
+}
+
+func TestSlimApi_Jsonp_invalidCallback(t *testing.T) {
+	callback := "cb);alert(1);//"
+	DoIntegrationTest(t, integrationTestArgs{
+		requestRelativeUrl: "?~method=Empty&~format=plain&~callback=" + url.QueryEscape(callback),
+		requestContentType: "",
+		requestBody:        "",
+		requestRouteParam:  map[string]string{},
+		wantStatusCode:     200,
+		wantContentType:    webapi.ContentTypeJson,
+		wantBody:           `{"Code":400,"Message":"bad callback","Data":null}`,
+		wantLogPattern: map[string]string{
+			"ErrorType": "BadRequestError",
+			"Error":     "bad callback",
+		},
 	})
 }
 
@@ -542,5 +572,32 @@ func (integrationTestMethodProvider) NdJsonWithError() webapi.NdJson[string] {
 		}
 
 		yield("error data", errors.New("msg"))
+	}
+}
+
+func Test_isValidCallback(t *testing.T) {
+	tests := map[string]bool{
+		"a":                 true,
+		"Callback_01":       true,
+		"_":                 true,
+		"_callback":         true,
+		"$":                 true,
+		"$callback":         true,
+		"callback$1":        true,
+		"":                  false,
+		"0callback":         false,
+		"callback-name":     false,
+		"object.callback":   false,
+		"回调":                false,
+		"callback()":        false,
+		"callback;alert(1)": false,
+		"callback/*comment": false,
+		"callback\nalert":   false,
+	}
+
+	for callback, want := range tests {
+		t.Run(callback, func(t *testing.T) {
+			assert.Equal(t, want, isValidCallback(callback))
+		})
 	}
 }

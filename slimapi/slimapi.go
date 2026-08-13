@@ -123,3 +123,24 @@ func getCustomString(state *webapi.ApiState, key any) string {
 	}
 	return ""
 }
+
+// 判断给定的 callback 值是否是合法的 JSONP 回调名称。
+//
+// 只允许包含 ASCII 字母、数字、下划线或美元符号。避免产生恶意脚本注入。
+func isValidCallback(callback string) bool {
+	if callback == "" {
+		return false
+	}
+
+	for i := 0; i < len(callback); i++ {
+		c := callback[i]
+		isLetter := c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+		isDigit := c >= '0' && c <= '9'
+		if isLetter || c == '_' || c == '$' || i > 0 && isDigit {
+			continue
+		}
+		return false
+	}
+
+	return true
+}

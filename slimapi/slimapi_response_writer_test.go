@@ -75,6 +75,14 @@ func Test_slimApiResponseWriter_WriteResponse(t *testing.T) {
 		})
 	})
 
+	t.Run("InvalidCallback", func(t *testing.T) {
+		testOne(args{
+			callData: map[string]int{"a": 1, "b": 2},
+			callback: "cb);alert(1);//",
+			wantBody: []string{`{"Code":400,"Message":"bad callback","Data":{"a":1,"b":2}}`},
+		})
+	})
+
 	t.Run("Panic", func(t *testing.T) {
 		testOne(args{
 			callData:         make(chan int),

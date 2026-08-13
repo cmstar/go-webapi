@@ -59,7 +59,7 @@ http://domain/api?~method=METHOD&~format=FORMAT&~callback=CALLBACK
 | ----------- | ---- | -------------------------------------------------------------------- |
 | `~method`   | 是   | 目标方法名称。                                                       |
 | `~format`   | 否   | 请求格式，可选值：`get`、`post`、`json`。优先级高于 `Content-Type`。 |
-| `~callback` | 否   | JSONP 回调函数名称。指定后返回 JSONP 格式。                          |
+| `~callback` | 否   | JSONP 回调函数名称。指定后返回 JSONP 格式，只允许包含 ASCII 字母、数字、下划线或美元符号。 |
 
 `~format` 的可选值：
 - `get` —— 默认值，使用 GET 方式处理参数。
@@ -118,6 +118,8 @@ SlimAPI 的 HTTP 状态码总是 200，具体结果通过 JSON 信封中的 `Cod
 ```javascript
 myCallback({"Code":0,"Message":"","Data":3})
 ```
+
+回调名称只能以 ASCII 字母、下划线或美元符号开头，后续只能包含 ASCII 字母、数字、下划线或美元符号。非法名称会返回 `Code=400` 的普通 JSON 错误响应。
 
 ### 纯文本
 

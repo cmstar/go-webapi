@@ -104,6 +104,12 @@ func (d *slimApiNameResolver) FillMethod(state *webapi.ApiState) {
 
 	state.Name = method
 	if callback != "" {
+		// JSONP 回调参数防脚本注入。
+		if !isValidCallback(callback) {
+			state.Error = webapi.CreateBadRequestError(state, nil, "bad callback")
+			state.ResponseContentType = webapi.ContentTypeJson
+			callback = ""
+		}
 		setCallback(state, callback)
 	}
 
