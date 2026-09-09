@@ -3,10 +3,14 @@
 package webapi
 
 import (
+	"bytes"
 	"errors"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"reflect"
 	"testing"
 
@@ -104,6 +108,52 @@ func TestCreateHandlerFunc(t *testing.T) {
 	handlerFunc.ServeHTTP(recorder, &http.Request{
 		URL: uri,
 	})
+}
+
+func TestCreateHandlerFunc_removesMultipartTemporaryFiles(t *testing.T) {
+	var (
+		form       *multipart.Form
+		fileHeader *multipart.FileHeader
+	)
+
+	handlerFunc := createHandlerFuncForTest(&ApiHandlerWrapper{
+		ApiDecoder: ApiDecoderFunc(func(state *ApiState) {
+			err := state.RawRequest.ParseMultipartForm(1)
+			require.NoError(t, err)
+
+			form = state.RawRequest.MultipartForm
+			fileHeader = form.File["file"][0]
+		}),
+		ApiMethodCaller: ApiMethodCallerFunc(func(state *ApiState) {
+			file, err := fileHeader.Open()
+			require.NoError(t, err)
+			defer file.Close()
+
+			content, err := io.ReadAll(file)
+			require.NoError(t, err)
+			require.Equal(t, []byte("content"), content)
+		}),
+	})
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	file, err := writer.CreateFormFile("file", "file.txt")
+	require.NoError(t, err)
+	_, err = file.Write([]byte("content"))
+	require.NoError(t, err)
+	require.NoError(t, writer.Close())
+
+	request := httptest.NewRequest(http.MethodPost, "/", &body)
+	request.Header.Set("Content-Type", writer.FormDataContentType())
+	handlerFunc.ServeHTTP(httptest.NewRecorder(), request)
+
+	require.NotNil(t, form)
+	t.Cleanup(func() {
+		_ = form.RemoveAll()
+	})
+
+	_, err = fileHeader.Open()
+	require.ErrorIs(t, err, os.ErrNotExist)
 }
 
 func TestCreateHandlerFunc_panic(t *testing.T) {

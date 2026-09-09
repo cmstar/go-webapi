@@ -263,6 +263,18 @@ func (f ApiLoggerFunc) Log(state *ApiState) {
 // 如果未能检索到对应的方法，则日志名称为 ApiHandler.Name() 。
 func CreateHandlerFunc(handler ApiHandler, logFinder logx.LogFinder) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// multipart/form-data 类型请求，在 http.Request.ParseMultipartForm() 之后，若文件较大，会存储到磁盘。
+		// Go 标准库会在请求结束时，自动清理，但是底层 chi 库会复制一遍 http.Request ，导致自动清理失效。
+		// 需要单独写代码处理。
+		// ref
+		// https://github.com/go-chi/chi/issues/769
+		// https://github.com/golang/go/issues/74455
+		defer func() {
+			if r.MultipartForm != nil {
+				_ = r.MultipartForm.RemoveAll()
+			}
+		}()
+
 		state := NewState(w, r, handler)
 
 		// 把比较可能 panic 的步骤抽出来，添加一个 defer 捕获错误并填到 state.Error 是上，使 panic 后仍
