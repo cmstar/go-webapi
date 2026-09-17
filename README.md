@@ -70,7 +70,7 @@ Content-Type: application/json
 
 上面的示例中，业务代码 `Plus` 和 `Multiply` 没有耦合 HTTP 协议，通信部分完全由框架处理。
 
-更完整的用法和说明，请参阅 [`docs/`](docs/) 目录。
+更完整的用法和说明，请参阅 [`docs/`](docs/) 目录。从旧版本升级时，请先阅读 [破坏性更新](docs/breaking-changes.md)。
 
 ## 其他语言的版本
 

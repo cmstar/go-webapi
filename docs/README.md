@@ -10,6 +10,7 @@ go-webapi 是一个基于管线模型的 WebAPI 框架，内置 SlimAPI 协议�
   - [接收文件](upload-file.md) —— 描述 SlimAPI 如何通过 `multipart/form-data` 类型的请求传递文件、简单类型和 JSON 数据。
   - [流式输出](streaming.md) —— 描述如何使用 SSE（Server-Sent Events）与 ‌ND-JSON‌（Newline-Delimited JSON）格式的流式响应。
 - [SlimAuth](slim-auth.md) —— 添加了签名校验的 SlimAPI 协议扩展，包括签名算法、服务端集成和客户端调用。
+- [破坏性更新](breaking-changes.md) —— v0.8.3 至 v0.9.2 的不兼容变更及迁移说明，不整理更早的历史版本。
 
 ## 依赖库
 
